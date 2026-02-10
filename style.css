@@ -11,13 +11,13 @@
     padding: 0; 
     box-sizing: border-box; 
     -webkit-tap-highlight-color: transparent;
-    user-select: none; /* Prevents text selection on mobile */
+    user-select: none;
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text);
-    font-family: 'Press Start 2P', cursive; /* 8-bit style */
+    font-family: 'Press Start 2P', cursive;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -31,9 +31,7 @@ body {
     padding: 20px 0;
 }
 
-header {
-    margin-bottom: 20px;
-}
+header { margin-bottom: 20px; }
 
 .title {
     font-size: 1.8rem;
@@ -48,13 +46,13 @@ header {
     font-size: 1.8rem;
     color: var(--gold);
     margin-bottom: 30px;
-    min-height: 35px; /* Keeps space open for typing effect */
+    min-height: 35px;
 }
 
 /* --- GRID LAYOUT --- */
 .grid-menu {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* Force 2 columns on mobile */
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-bottom: 30px;
 }
@@ -70,11 +68,8 @@ header {
     transition: transform 0.2s, border-color 0.2s;
     position: relative;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 0 rgba(0,0,0,0.5); /* Retro 3D shadow */
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5);
 }
 
 .card:active {
@@ -83,28 +78,14 @@ header {
     background-color: #3d2b36;
 }
 
-/* --- EMOJI FIX --- */
+/* --- ICONS --- */
 .emoji {
     font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
     font-style: normal;
 }
-
-.icon { 
-    font-size: 2rem; 
-    margin-bottom: 10px; 
-}
-
-.date { 
-    font-size: 0.6rem; 
-    color: #aaa; 
-    text-transform: uppercase; 
-    margin-bottom: 8px; 
-}
-
-.label { 
-    font-size: 0.7rem; 
-    line-height: 1.4; 
-}
+.icon { font-size: 2rem; margin-bottom: 10px; }
+.date { font-size: 0.6rem; color: #aaa; text-transform: uppercase; margin-bottom: 8px; }
+.label { font-size: 0.7rem; line-height: 1.4; }
 
 /* Special Finale Card */
 .card.final {
@@ -114,36 +95,30 @@ header {
 }
 
 /* Footer */
-footer p {
-    font-size: 0.6rem;
-    color: #666;
-    margin-top: 20px;
-}
+footer p { font-size: 0.6rem; color: #666; margin-top: 20px; }
 
-/* Desktop override */
 @media (min-width: 600px) {
     .grid-menu { grid-template-columns: repeat(4, 1fr); }
     .card.final { grid-column: span 4; }
 }
 
 /* ========================================= */
-/* LOCKED STATE STYLES (NEW)           */
+/* 🔒 LOCKED STATE STYLES (REQUIRED)         */
 /* ========================================= */
 .card.locked {
-    filter: grayscale(100%); /* Black & white */
-    opacity: 0.6;            /* Dimmed */
+    filter: grayscale(100%);
+    opacity: 0.6;
     cursor: not-allowed;
     position: relative;
 }
 
-/* Overlay Lock Icon */
 .card.locked::after {
     content: "🔒";
     position: absolute;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     font-size: 3rem;
-    filter: grayscale(0); /* Keep the lock colorful */
+    filter: grayscale(0);
     text-shadow: 0 5px 10px rgba(0,0,0,0.8);
     z-index: 10;
 }
