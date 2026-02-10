@@ -5,55 +5,89 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Propose Day: The Question</title>
     
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@500;700&family=VT323&display=swap" rel="stylesheet">
 
-    <script src="lib/gsap.min.js"></script>
-    <script src="lib/howler.min.js"></script>
-    <script src="lib/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; background: #2d3436; font-family: 'Quicksand', sans-serif; }
-        #vn-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        body { 
+            margin: 0; padding: 0; overflow: hidden; 
+            background: #2d3436; 
+            font-family: 'Quicksand', sans-serif; 
+            /* Prevent pull-to-refresh on mobile */
+            overscroll-behavior: none;
+        }
+
+        #vn-container { 
+            position: relative; 
+            width: 100vw; 
+            height: 100dvh; /* Mobile browser fix */
+            overflow: hidden; 
+        }
 
         /* --- LAYERS --- */
         #bg-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url('assets/d2_bg.png'); /* PNG check */
+            background-image: url('assets/d2_bg.png'); 
             background-size: cover; background-position: center; z-index: 1; 
         }
 
         #character {
-            position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
-            height: 85vh; max-width: 90vw; object-fit: contain; z-index: 5; 
-            display: none; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));
+            position: absolute; 
+            bottom: 0; /* Aligned to bottom */
+            left: 50%; 
+            transform: translateX(-50%);
+            /* Responsive sizing */
+            height: auto;
+            max-height: 75dvh; 
+            max-width: 95vw;
+            object-fit: contain; 
+            z-index: 5; 
+            display: none; 
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.3));
         }
 
         /* --- DIALOGUE UI --- */
         #dialogue-box {
-            position: absolute; bottom: 20px; left: 5%; width: 90%; 
-            min-height: 150px; height: auto;
+            position: absolute; 
+            bottom: 20px; 
+            left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 800px;
+            min-height: 140px; height: auto;
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px; border: 3px solid #ff9a9e;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 50; 
-            padding: 20px; padding-bottom: 40px; box-sizing: border-box;
-            display: flex; flex-direction: column; pointer-events: none; /* Let clicks pass to container */
+            padding: 20px; padding-bottom: 30px; box-sizing: border-box;
+            display: flex; flex-direction: column; 
+            pointer-events: none; 
         }
 
-        #speaker-name { font-family: 'Dancing Script', cursive; font-size: 1.8rem; color: #ff4757; margin-bottom: 8px; font-weight: bold; }
-        #text-content { font-size: 1.1rem; color: #2d3436; line-height: 1.4; }
+        #speaker-name { 
+            font-family: 'Dancing Script', cursive; 
+            font-size: clamp(1.5rem, 5vw, 2rem); /* Responsive font */
+            color: #ff4757; margin-bottom: 8px; font-weight: bold; 
+        }
+        
+        #text-content { 
+            font-size: clamp(0.95rem, 4vw, 1.2rem); /* Responsive font */
+            color: #2d3436; line-height: 1.4; 
+        }
 
         /* TAP GUIDE */
         #tap-guide {
             position: absolute; bottom: 10px; right: 20px;
-            font-size: 0.9rem; color: #ff4757; opacity: 0;
+            font-size: 0.8rem; color: #ff4757; opacity: 0;
             animation: bounce 1s infinite; font-weight: bold;
         }
         @keyframes bounce { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-5px); opacity: 0.5; } }
 
-        /* INVISIBLE CLICK LAYER (Covers whole screen) */
+        /* INVISIBLE CLICK LAYER */
         #click-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 60; cursor: pointer;
+            /* Remove tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* --- CHOICES --- */
@@ -61,25 +95,18 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 100; 
             display: none; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
+            padding: 20px; box-sizing: border-box;
         }
-
-        /* Update this in the <style> section of EVERY file */
-body, #game-container, #main-container {
-    height: 100vh;       /* Fallback */
-    height: 100dvh;      /* <--- Dynamic Viewport Height (The Fix) */
-    overflow: hidden;    /* Prevents scrolling */
-}
-
 
         .choice-btn {
             background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
-            border: 4px solid white; padding: 20px 40px; border-radius: 50px;
-            font-size: 1.2rem; font-weight: 700; color: #d63031;
+            border: 4px solid white; padding: 15px 30px; border-radius: 50px;
+            font-size: clamp(1rem, 4vw, 1.3rem); 
+            font-weight: 700; color: #d63031;
             box-shadow: 0 10px 20px rgba(0,0,0,0.3); cursor: pointer;
-            width: 80%; max-width: 300px; text-transform: uppercase;
+            width: 100%; max-width: 300px; text-transform: uppercase;
         }
         
-        /* The "No" button looks normal initially */
         #btn-no { background: linear-gradient(135deg, #a4b0be 0%, #747d8c 100%); color: white; }
 
         /* --- START SCREEN --- */
@@ -87,15 +114,32 @@ body, #game-container, #main-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: #2d3436; display: flex; justify-content: center; align-items: center;
             z-index: 200; color: white; flex-direction: column;
+            text-align: center; padding: 20px;
         }
 
-        /* --- BSOD (Blue Screen of Death) --- */
+        /* --- BSOD (Blue Screen) --- */
         #bsod {
             display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: #0078d7; color: white; z-index: 300;
-            padding: 40px; box-sizing: border-box; font-family: 'VT323', monospace;
+            padding: 30px; box-sizing: border-box; font-family: 'VT323', monospace;
+            font-size: clamp(1rem, 3vw, 1.5rem);
         }
-        .sad-face { font-size: 100px; margin-bottom: 20px; display: block; }
+        .sad-face { font-size: clamp(60px, 15vw, 100px); margin-bottom: 20px; display: block; }
+
+        /* --- LANDSCAPE MODE FIXES (Small height) --- */
+        @media (max-height: 500px) {
+            #character {
+                height: 90vh; /* Taller relative to screen */
+                max-width: 40vw; /* Narrower */
+                left: 20%; /* Move to side */
+                bottom: -20px;
+            }
+            #dialogue-box {
+                width: 60%; 
+                left: auto; right: 20px; transform: none; /* Move box to right */
+                bottom: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -108,24 +152,22 @@ body, #game-container, #main-container {
         <div id="click-layer" style="display:none;"></div>
 
         <div id="start-screen">
-            <h1 style="font-family:'Dancing Script'; font-size:3rem; color:#ff9a9e; margin-bottom: 10px;">Chapter 2</h1>
-            <p style="font-size: 1.2rem; margin-bottom: 30px;">The Question</p>
+            <h1 style="font-family:'Dancing Script'; font-size:clamp(2.5rem, 8vw, 4rem); color:#ff9a9e; margin-bottom: 10px;">Chapter 2</h1>
+            <p style="font-size: clamp(1rem, 4vw, 1.5rem); margin-bottom: 30px;">The Question</p>
             <button class="choice-btn" id="start-btn">Start Story</button>
         </div>
-
-        
 
         <div id="dialogue-box" style="display:none;">
             <div id="speaker-name">Tanvir</div>
             <div id="text-content">...</div>
-            <div id="tap-guide">Tap </div>
+            <div id="tap-guide">Tap to continue</div>
         </div>
 
         <div id="choices-overlay">
-            <h1 style="color:white; font-family:'Dancing Script'; font-size: 2.2rem; text-align:center; padding: 0 20px;">
+            <h1 style="color:white; font-family:'Dancing Script'; font-size: clamp(1.8rem, 6vw, 3rem); text-align:center; padding: 0 10px;">
                 Will you be my Valentine?
             </h1>
-            <button class="choice-btn" onclick="acceptProposal()">YES! </button>
+            <button class="choice-btn" onclick="acceptProposal()">YES! ❤️</button>
             <button class="choice-btn" id="btn-no" onclick="rejectProposal()">No, sorry.</button>
         </div>
 
@@ -152,7 +194,7 @@ body, #game-container, #main-container {
             { speaker: "Her", text: "Pakhi? You look like you're compiling a heavy code. What's on your mind?", sprite: "happy" },
             { speaker: "Tanvir", text: "Just thinking... about how boring my life was before I met you.", sprite: "happy" },
             { speaker: "Tanvir", text: "You brought color to my grayscale world.", sprite: "happy" },
-            { speaker: "Her", text: "Oh? Is this the part where you ask me to make you noodles or jhalmuri? ", sprite: "surprised" },
+            { speaker: "Her", text: "Oh? Is this the part where you ask me to make you noodles or jhalmuri? 🍜", sprite: "surprised" },
             { speaker: "Tanvir", text: "No. Well, maybe later. But right now, I have a question.", sprite: "happy" },
             { speaker: "Tanvir", text: "If I could refactor my life a thousand times, I would choose you in every single version.", sprite: "happy" },
             { speaker: "Tanvir", text: "Will you be my Valentine, my Player 2, and my bug-fixer... forever?", sprite: "surprised" }
@@ -160,8 +202,7 @@ body, #game-container, #main-container {
 
         let currentIndex = 0;
         let isTyping = false;
-        let forcedYes = false; // Tracks if she already tried to say No
-
+        
         const dialogueBox = document.getElementById('dialogue-box');
         const speakerName = document.getElementById('speaker-name');
         const textContent = document.getElementById('text-content');
@@ -176,14 +217,14 @@ body, #game-container, #main-container {
         document.getElementById('start-btn').addEventListener('click', () => {
             startScreen.style.display = 'none';
             dialogueBox.style.display = 'flex';
-            clickLayer.style.display = 'block'; // Enable full screen clicking
+            clickLayer.style.display = 'block'; 
             bgm.play();
             showDialogue();
         });
 
         // --- DISPLAY DIALOGUE ---
         function showDialogue() {
-            tapGuide.style.opacity = 0; // Hide guide while typing
+            tapGuide.style.opacity = 0; 
 
             if (currentIndex >= script.length) {
                 // END OF STORY
@@ -191,7 +232,7 @@ body, #game-container, #main-container {
                 clickLayer.style.display = 'none';
                 choicesOverlay.style.display = 'flex';
                 
-                // Show buttons
+                // Show buttons animation
                 gsap.from(".choice-btn", { scale: 0, opacity: 0, duration: 0.5, stagger: 0.2, ease: "back.out" });
                 return;
             }
@@ -205,8 +246,10 @@ body, #game-container, #main-container {
                 charImg.style.display = 'none';
             } else {
                 charImg.style.display = 'block';
+                // Note: Ensure these file names match your actual assets
                 const src = line.sprite === "happy" ? "assets/d2_her_happy.png" : "assets/d2_her_surprised.png";
-                if (charImg.src.indexOf(src) === -1) {
+                
+                if (!charImg.src.includes(src)) {
                     charImg.src = src;
                     gsap.fromTo(charImg, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.5 });
                 }
@@ -223,7 +266,7 @@ body, #game-container, #main-container {
                     setTimeout(type, 30);
                 } else {
                     isTyping = false;
-                    tapGuide.style.opacity = 1; // Show guide when done
+                    tapGuide.style.opacity = 1; 
                 }
             }
             type();
@@ -235,6 +278,9 @@ body, #game-container, #main-container {
                 sfxClick.play();
                 currentIndex++;
                 showDialogue();
+            } else {
+                // Optional: Instant finish typing if clicked while typing
+                // Not implemented to keep code simple, but prevents skipping too fast
             }
         });
 
@@ -271,11 +317,12 @@ body, #game-container, #main-container {
 
             // Change Title
             document.querySelector('#choices-overlay h1').innerText = "System Recovered. \nOnly one valid option remains.";
+            document.querySelector('#choices-overlay h1').style.fontSize = "clamp(1.5rem, 5vw, 2.5rem)";
             
             // Make "YES" huge
             const yesBtn = document.querySelector('.choice-btn');
-            yesBtn.style.transform = "scale(1.5)";
-            yesBtn.innerText = "YES (Obviously) ";
+            yesBtn.style.transform = "scale(1.2)";
+            yesBtn.innerText = "YES (Obviously) ❤️";
         }
 
         // --- ACCEPT ---
@@ -285,10 +332,10 @@ body, #game-container, #main-container {
             confetti({ particleCount: 300, spread: 100, origin: { y: 0.6 } });
             
             choicesOverlay.innerHTML = `
-                <h1 style='color:white; font-family:Dancing Script; font-size:3rem; text-align:center;'>
-                    Decision Saved! 
+                <h1 style='color:white; font-family:Dancing Script; font-size:clamp(2rem, 8vw, 4rem); text-align:center;'>
+                    Decision Saved! ❤️  
                 </h1>
-                <p style="color:white; font-size:1.2rem;">See you later, alligator...</p>
+                <p style="color:white; font-size:clamp(1rem, 4vw, 1.5rem); text-align: center;">See you later, alligator...</p>
             `;
             
             setTimeout(() => {
