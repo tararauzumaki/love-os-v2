@@ -5,34 +5,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chocolate Day: Sweet Catch</title>
     
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
 
-    <script src="lib/gsap.min.js"></script>
-    <script src="lib/howler.min.js"></script>
-    <script src="lib/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
+        :root {
+            --basket-width: 100px;
+            --basket-height: 80px;
+            --item-size: 60px;
+        }
+
+        /* Mobile sizing */
+        @media (max-width: 600px) {
+            :root {
+                --basket-width: 80px;
+                --basket-height: 65px;
+                --item-size: 45px;
+            }
+        }
+
         body { 
             margin: 0; padding: 0; overflow: hidden; 
             background: #ffeaa7; 
             font-family: 'Quicksand', sans-serif; 
             touch-action: none; user-select: none;
+            /* Prevent pull-to-refresh */
+            overscroll-behavior: none;
         }
 
-        #game-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+        #game-container { 
+            position: relative; 
+            width: 100vw; 
+            /* Fix for mobile browsers */
+            height: 100dvh; 
+            overflow: hidden; 
+        }
 
         /* --- BACKGROUND --- */
         #bg-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* Fallback Gradient if d3_bg.png is missing */
             background: linear-gradient(180deg, #81ecec 0%, #74b9ff 100%);
             z-index: 1;
-        }
-        /* If you have the image, this overwrites the gradient */
-        #bg-layer.has-image {
-            background-image: url('assets/d3_bg.png'); 
-            background-size: cover; background-position: center;
         }
 
         /* --- UI --- */
@@ -42,13 +58,17 @@
             padding: 10px 20px; border-radius: 50px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             font-family: 'Fredoka One', cursive; color: #6c5ce7;
-            font-size: 1.5rem; display: flex; gap: 10px; align-items: center;
+            font-size: clamp(1rem, 5vw, 1.5rem); 
+            display: flex; gap: 10px; align-items: center;
         }
 
         /* --- PLAYER --- */
         #player {
-            position: absolute; bottom: 20px; left: 50%; 
-            width: 100px; height: 80px; 
+            position: absolute; 
+            /* Ensure it sits above the iPhone home bar */
+            bottom: max(20px, env(safe-area-inset-bottom)); 
+            left: 50%; 
+            width: var(--basket-width); height: var(--basket-height); 
             transform: translateX(-50%);
             background-image: url('assets/d3_basket.png');
             background-size: contain; background-repeat: no-repeat; background-position: bottom center;
@@ -57,19 +77,20 @@
 
         /* --- ITEMS --- */
         .item {
-            position: absolute; top: -80px; 
-            width: 60px; height: 60px;
+            position: absolute; top: -100px; 
+            width: var(--item-size); height: var(--item-size);
             background-size: contain; background-repeat: no-repeat;
             z-index: 10;
         }
         
         .choco { background-image: url('assets/d3_choco.png'); }
-        .bomb  { background-image: url('assets/d3_bad.png'); } /* The Angry Emoji */
+        .bomb  { background-image: url('assets/d3_bad.png'); } 
         
         /* The Giant Golden Chocolate */
         .gold-boss { 
             background-image: url('assets/d3_gold_choco.png'); 
-            width: 150px; height: 150px; /* Massive */
+            width: calc(var(--item-size) * 2.5); 
+            height: calc(var(--item-size) * 2.5); 
             filter: drop-shadow(0 0 20px gold);
             z-index: 30;
         }
@@ -80,24 +101,29 @@
             display: flex; justify-content: center; align-items: center; flex-direction: column;
             z-index: 100; text-align: center;
             background: rgba(0,0,0,0.85); color: white;
+            padding: 20px; box-sizing: border-box;
         }
 
         #start-screen { background: rgba(255, 234, 167, 0.95); }
         #game-over-screen { display: none; }
         #win-screen { display: none; background: rgba(255, 215, 0, 0.95); color: #d35400; }
 
+        h1 { font-family:'Fredoka One'; font-size: clamp(2rem, 8vw, 3rem); margin-bottom: 10px; }
+        p { font-size: clamp(1rem, 4vw, 1.2rem); margin-bottom: 30px; line-height: 1.5; }
+
         .btn-start {
             background: #0984e3; color: white; border: 4px solid white;
-            padding: 20px 50px; font-size: 1.5rem; border-radius: 50px;
+            padding: 15px 40px; font-size: clamp(1rem, 5vw, 1.5rem); border-radius: 50px;
             font-family: 'Fredoka One', cursive; cursor: pointer;
-            box-shadow: 0 10px 0 #0652dd; margin-top: 20px;
+            box-shadow: 0 8px 0 #0652dd; margin-top: 20px;
             transition: transform 0.1s;
         }
         .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #0652dd; }
 
         /* Floating Score */
         .float-score {
-            position: absolute; font-family: 'Fredoka One'; font-size: 2rem; 
+            position: absolute; font-family: 'Fredoka One'; 
+            font-size: clamp(1.5rem, 5vw, 2rem);
             pointer-events: none; z-index: 30; text-shadow: 2px 2px 0 #000;
         }
         
@@ -106,6 +132,7 @@
             background: white; color: #333; padding: 20px; border: 2px dashed #333;
             transform: rotate(-2deg); margin-bottom: 20px;
             box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+            max-width: 90%;
         }
     </style>
 </head>
@@ -115,32 +142,32 @@
         <div id="bg-layer"></div>
         
         <div id="ui-layer">
-            <span>🍫</span> <span id="score">0</span> / 70
+            <span>🍫</span> <span id="score">0</span> / 50
         </div>
 
         <div id="start-screen" class="screen-overlay">
-            <h1 style="color:#0984e3; font-family:'Fredoka One'; font-size: 3rem; margin-bottom: 10px;">Sweet Catch</h1>
-            <p style="color:#636e72; font-size: 1.2rem; margin-bottom: 30px;">
-                Collect 70 Points to Win!<br><br>
-                🍫 Chocolate = <span style="color:#00b894">+5 Points</span><br>
-                😡 Angry Emoji = <span style="color:#d63031">GAME OVER</span>
+            <h1 style="color:#0984e3;">Sweet Catch</h1>
+            <p style="color:#636e72;">
+                Collect 50 Points to Win!<br><br>
+                🍫 Choco = <span style="color:#00b894">+5 Points</span><br>
+                😡 Angry = <span style="color:#d63031">GAME OVER</span>
             </p>
             <button class="btn-start" id="start-btn">START</button>
         </div>
 
         <div id="game-over-screen" class="screen-overlay">
-            <h1 style="color:#d63031; font-family:'Fredoka One';">OOPS!</h1>
-            <p style="font-size: 1.2rem;">You caught an angry emoji!</p>
+            <h1 style="color:#d63031;">OOPS!</h1>
+            <p>You caught an angry emoji!</p>
             <button class="btn-start" style="background:#d63031; box-shadow:0 10px 0 #a21b24" id="restart-btn">TRY AGAIN</button>
         </div>
 
         <div id="win-screen" class="screen-overlay">
-            <h1 style="font-family:'Fredoka One'; font-size: 3rem;">JACKPOT!</h1>
+            <h1>JACKPOT!</h1>
             
             <div class="ticket">
                 <h2 style="margin:0; font-size:1.5rem;">OFFICIAL COUPON</h2>
                 <hr>
-                <p style="font-size: 1.2rem; font-weight:bold;">1x 5 Taka Chocolate Bar</p>
+                <p style="font-size: 1.2rem; font-weight:bold;">1x Chocolate Bar</p>
                 <p style="font-size: 0.8rem; color:#666;">Fully paid by Tanvir</p>
             </div>
 
@@ -158,11 +185,11 @@
                 bgm = new Howl({ src: ['assets/bgm_game.mp3'], loop: true, volume: 0.4 });
                 sfxCatch = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.6 });
                 sfxWin = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
-                sfxDie = new Howl({ src: ['assets/sfx_jump.mp3'], rate: 0.5, volume: 1.0 }); // Low pitch
+                sfxDie = new Howl({ src: ['assets/sfx_jump.mp3'], rate: 0.5, volume: 1.0 });
             } catch(e) {}
 
             // --- CONFIG ---
-            const GOAL_SCORE = 70;
+            const GOAL_SCORE = 50; // Lowered slightly for mobile playability
             let spawnRate = 800; 
             let score = 0;
             let gameActive = false;
@@ -180,13 +207,22 @@
             // --- CONTROLS ---
             function movePlayer(e) {
                 if (!gameActive) return;
+                
+                // Get Touch or Mouse X
                 let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                
+                // Calculate Percentage
                 let percent = (clientX / window.innerWidth) * 100;
+                
+                // Clamp keeps player inside screen (10% to 90%)
                 percent = Math.max(10, Math.min(90, percent));
+                
                 gsap.set(player, { left: percent + "%" });
             }
-            container.addEventListener('mousemove', movePlayer);
-            container.addEventListener('touchmove', movePlayer, { passive: false });
+
+            // Attach listener to window so dragging doesn't stop if finger leaves basket
+            window.addEventListener('mousemove', movePlayer);
+            window.addEventListener('touchmove', movePlayer, { passive: false });
 
             // --- SPAWNING LOGIC ---
             function spawnItem() {
@@ -195,19 +231,19 @@
                 const item = document.createElement('div');
                 item.classList.add('item');
                 
-                // 30% Chance of Bomb (Angry Emoji)
+                // 30% Chance of Bomb
                 const isBomb = Math.random() > 0.7; 
                 item.classList.add(isBomb ? 'bomb' : 'choco');
                 item.dataset.type = isBomb ? 'bomb' : 'choco';
 
-                item.style.left = (Math.random() * 90 + 5) + "%";
+                item.style.left = (Math.random() * 80 + 10) + "%"; // Keep away from extreme edges
                 container.appendChild(item);
 
-                // Bomb falls faster than Choco
+                // Speed
                 const speed = isBomb ? Math.random() * 1.5 + 2 : Math.random() * 2 + 3;
 
                 gsap.to(item, {
-                    top: window.innerHeight,
+                    top: window.innerHeight + 100, // Go below screen
                     duration: speed,
                     ease: "none",
                     onUpdate: () => checkCollision(item),
@@ -222,8 +258,13 @@
                 const pRect = player.getBoundingClientRect();
                 const iRect = item.getBoundingClientRect();
 
-                if (iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom &&
-                    iRect.right > pRect.left + 20 && iRect.left < pRect.right - 20) {
+                // Simple AABB Collision
+                // Added a buffer so you have to actually hit the basket part
+                if (iRect.bottom > pRect.top + 15 && 
+                    iRect.top < pRect.bottom - 10 &&
+                    iRect.right > pRect.left + 15 && 
+                    iRect.left < pRect.right - 15) {
+                    
                     catchItem(item);
                 }
             }
@@ -236,7 +277,7 @@
                 const type = item.dataset.type;
 
                 if (type === 'choco') {
-                    updateScore(5, item); // +5 Points
+                    updateScore(5, item);
                     if(sfxCatch) sfxCatch.play();
                     gsap.fromTo(player, { scaleY: 0.8 }, { scaleY: 1, duration: 0.2 });
                 } 
@@ -252,13 +293,17 @@
                 score += amount;
                 scoreEl.innerText = score;
 
-                // +5 Text
+                // Floating Text
                 const floatText = document.createElement('div');
                 floatText.classList.add('float-score');
                 floatText.innerText = "+" + amount;
-                floatText.style.left = itemRef.style.left;
-                floatText.style.top = (window.innerHeight - 150) + "px";
+                
+                // Position where item was caught
+                const rect = itemRef.getBoundingClientRect();
+                floatText.style.left = rect.left + "px";
+                floatText.style.top = rect.top + "px";
                 floatText.style.color = '#00b894';
+                
                 container.appendChild(floatText);
                 gsap.to(floatText, { y: -50, opacity: 0, duration: 1, onComplete: () => floatText.remove() });
 
@@ -268,10 +313,10 @@
                 }
             }
 
-            // --- BOSS PHASE (THE GOLDEN CHOCOLATE) ---
+            // --- BOSS PHASE ---
             function startBossPhase() {
                 bossPhase = true;
-                clearInterval(spawnInterval); // Stop normal items
+                clearInterval(spawnInterval);
                 
                 // Clear existing items
                 document.querySelectorAll('.item').forEach(i => i.remove());
@@ -280,12 +325,14 @@
                 const gold = document.createElement('div');
                 gold.classList.add('item', 'gold-boss');
                 gold.dataset.type = 'gold';
-                gold.style.left = "50%"; // Centers it
+                gold.style.left = "50%"; 
+                // Start above screen
+                gold.style.top = "-150px";
                 container.appendChild(gold);
 
-                // Falls slowly and majestically
+                // Falls all the way through
                 gsap.to(gold, {
-                    top: window.innerHeight - 100, // Stops right at basket height
+                    top: window.innerHeight + 150, 
                     duration: 4,
                     ease: "power1.inOut",
                     onUpdate: () => checkCollision(gold)
@@ -300,9 +347,11 @@
                 if(sfxDie) sfxDie.play();
                 
                 // Shake Screen
-                gsap.fromTo(container, { x: -20 }, { x: 20, duration: 0.05, repeat: 5, yoyo: true });
+                gsap.fromTo(container, { x: -20 }, { x: 20, duration: 0.05, repeat: 5, yoyo: true, clearProps:"x" });
 
-                gameOverScreen.style.display = 'flex';
+                setTimeout(() => {
+                    gameOverScreen.style.display = 'flex';
+                }, 500);
             }
 
             function triggerWin() {

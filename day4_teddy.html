@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Teddy Day: Hamster Maze</title>
     
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
 
-    <script src="lib/gsap.min.js"></script>
-    <script src="lib/howler.min.js"></script>
-    <script src="lib/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         body { 
@@ -18,44 +17,60 @@
             background: #ffeaa7; 
             font-family: 'Quicksand', sans-serif; 
             touch-action: none; user-select: none;
+            /* Flex layout to center everything */
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100dvh; /* Mobile viewport fix */
         }
+
+        /* --- HEADER --- */
+        #header-box {
+            text-align: center;
+            margin-bottom: 10px;
+            flex-shrink: 0;
+        }
+        h1 { font-family:'Fredoka One'; color:#6c5ce7; margin:0; font-size: clamp(1.2rem, 4vw, 1.8rem); }
+        p { margin:5px 0; font-size: clamp(0.7rem, 3vw, 0.9rem); color:#636e72; }
 
         /* --- GAME BOARD --- */
         #game-container { 
             position: relative; 
-            width: 95vw; max-width: 400px;
-            aspect-ratio: 1 / 1;
+            /* Smart Sizing: Never wider than screen, never taller than 55% of screen height */
+            width: min(90vw, 55vh); 
+            height: min(90vw, 55vh);
             background: #fff;
             border: 5px solid #6c5ce7;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 10px 0 #a29bfe;
+            box-shadow: 0 6px 0 #a29bfe;
+            flex-shrink: 0; /* Prevent squishing */
         }
 
         canvas { display: block; width: 100%; height: 100%; }
 
-        /* --- UI LAYER --- */
+        /* --- UI OVERLAY --- */
         #ui-header {
             position: absolute; top: 10px; width: 100%; text-align: center;
-            font-family: 'Fredoka One'; font-size: 1.5rem; color: #6c5ce7;
+            font-family: 'Fredoka One'; font-size: 1.2rem; color: #6c5ce7;
             pointer-events: none; z-index: 20;
             text-shadow: 2px 2px 0 #fff;
         }
 
         /* --- CONTROLS --- */
         #controls {
-            margin-top: 20px;
+            margin-top: 15px;
             display: grid;
-            grid-template-columns: 60px 60px 60px;
-            grid-template-rows: 60px 60px;
-            gap: 10px;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 8px;
+            width: min(60vw, 200px); /* Responsive width */
+            flex-shrink: 0;
         }
 
         .d-btn {
             background: #fab1a0; border: none; border-radius: 10px;
-            box-shadow: 0 5px 0 #e17055;
-            font-size: 1.5rem; color: white; cursor: pointer;
+            box-shadow: 0 4px 0 #e17055;
+            aspect-ratio: 1/1; /* Keep buttons square */
+            font-size: 1.2rem; color: white; cursor: pointer;
             display: flex; justify-content: center; align-items: center;
             -webkit-tap-highlight-color: transparent;
         }
@@ -71,26 +86,39 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
             z-index: 50; text-align: center;
-            background: rgba(255, 234, 167, 0.95);
+            background: rgba(255, 234, 167, 0.98);
+            padding: 20px; box-sizing: border-box;
         }
         
-        #win-screen { display: none; background: rgba(255, 255, 255, 0.95); }
+        #win-screen { display: none; background: rgba(255, 255, 255, 0.98); }
 
         .btn-start {
             background: #00b894; color: white; border: 4px solid white;
-            padding: 15px 40px; font-size: 1.2rem; border-radius: 50px;
+            padding: 12px 30px; font-size: 1rem; border-radius: 50px;
             font-family: 'Fredoka One', cursive; cursor: pointer;
             box-shadow: 0 6px 0 #006266; margin-top: 20px;
         }
         .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #006266; }
 
+        /* --- LANDSCAPE FIX --- */
+        /* If screen is short (landscape), put controls to the side */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body { flex-direction: row; gap: 20px; }
+            #header-box { display: none; } /* Hide title in landscape to save space */
+            #game-container { width: 80vh; height: 80vh; } /* Make board bigger */
+            #controls { 
+                grid-template-columns: repeat(3, 50px); 
+                grid-template-rows: repeat(2, 50px);
+                width: auto; margin-top: 0;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <div style="margin-bottom: 10px; text-align: center;">
-        <h1 style="font-family:'Fredoka One'; color:#6c5ce7; margin:0; font-size:1.8rem;">Hamster Maze</h1>
-        <p style="margin:5px 0; font-size:0.9rem; color:#636e72;">Collect Seeds & Find Teddy!</p>
+    <div id="header-box">
+        <h1>Hamster Maze</h1>
+        <p>Collect Seeds & Find Teddy!</p>
     </div>
 
     <div id="game-container">
@@ -98,37 +126,40 @@
         <canvas id="gameCanvas"></canvas>
 
         <div id="start-screen" class="screen-overlay">
-            <h2 style="color:#d63031; font-family:'Fredoka One';">MISSION: TEDDY</h2>
-            <p>Guide the Hamster.<br>Collect 3 Seeds.<br>Unlock the Teddy.</p>
+            <h2 style="color:#d63031; font-family:'Fredoka One'; font-size:1.8rem;">MISSION: TEDDY</h2>
+            <p style="font-size:0.9rem; line-height:1.6;">
+                Guide the Hamster.<br>Collect 3 Seeds.<br>Find the Teddy.
+            </p>
+            <p style="font-size:0.8rem; color:#636e72; margin-top:10px;">(Swipe or use buttons)</p>
             <button class="btn-start" id="start-btn">START</button>
         </div>
 
         <div id="win-screen" class="screen-overlay">
             <h1 style="color:#e84393; font-family:'Fredoka One';">YOU FOUND ME!</h1>
-            <img src="assets/d4_teddy.png" style="width:100px; animation: bounce 1s infinite;">
-            <p style="color:#2d3436; margin-top:20px;">"I'm yours forever."</p>
+            <img src="assets/d4_teddy.png" style="width:80px; animation: bounce 1s infinite; margin: 15px 0;">
+            <p style="color:#2d3436; font-size:1rem;">"I'm yours forever."</p>
             <button class="btn-start" onclick="location.href='index.html'">CLAIM TEDDY</button>
         </div>
     </div>
 
     <div id="controls">
-        <button class="d-btn up" onpointerdown="move(0, -1)"></button>
-        <button class="d-btn left" onpointerdown="move(-1, 0)"></button>
-        <button class="d-btn down" onpointerdown="move(0, 1)"></button>
-        <button class="d-btn right" onpointerdown="move(1, 0)"></button>
+        <button class="d-btn up" onpointerdown="move(0, -1)">▲</button>
+        <button class="d-btn left" onpointerdown="move(-1, 0)">◀</button>
+        <button class="d-btn down" onpointerdown="move(0, 1)">▼</button>
+        <button class="d-btn right" onpointerdown="move(1, 0)">▶</button>
     </div>
 
     <script>
         // --- 1. SAFE IMAGE LOADER ---
-        // This ensures the game doesn't crash if an image is missing or loading
         const assets = {};
         function loadAsset(name, src) {
             const img = new Image();
             img.src = src;
-            img.onload = () => { if(gameActive) draw(); }; // Redraw when loaded
+            img.onload = () => { if(gameActive) draw(); }; 
             assets[name] = img;
         }
 
+        // Make sure these match your actual file names
         loadAsset('hamster', 'assets/d4_hamster.png');
         loadAsset('teddy', 'assets/d4_teddy.png');
         loadAsset('wall', 'assets/d4_wall.png');
@@ -146,6 +177,7 @@
         // --- 3. GAME LOGIC ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
         
         // 0=Path, 1=Wall, 2=Start, 3=Teddy, 4=Seed
         const mapLayout = [
@@ -169,12 +201,12 @@
         let cols = mapLayout[0].length;
         let rows = mapLayout.length;
 
+        // Resize Logic
         function resize() {
-            const container = document.getElementById('game-container');
-            // Force square aspect ratio calculation
-            const size = Math.min(container.clientWidth, container.clientHeight);
-            canvas.width = size;
-            canvas.height = size;
+            // Get the actual computed size of the container (handled by CSS)
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
             
             cellSize = canvas.width / cols;
             draw();
@@ -186,8 +218,8 @@
             if (img && img.complete && img.naturalHeight !== 0) {
                 ctx.drawImage(img, x, y, size, size);
             } else {
-                // Fallback colored placeholders so game is playable even without images
-                ctx.fillStyle = '#fab1a0'; // Placeholder color
+                // Fallback colored placeholders
+                ctx.fillStyle = '#fab1a0'; 
                 ctx.beginPath();
                 ctx.arc(x + size/2, y + size/2, size/3, 0, Math.PI*2);
                 ctx.fill();
@@ -211,7 +243,7 @@
                         if(assets.wall && assets.wall.complete && assets.wall.naturalHeight !== 0) {
                             ctx.drawImage(assets.wall, px, py, cellSize, cellSize);
                         } else {
-                            ctx.fillStyle = '#6c5ce7'; // Fallback purple wall
+                            ctx.fillStyle = '#6c5ce7'; // Fallback purple
                             ctx.fillRect(px, py, cellSize, cellSize);
                             ctx.strokeStyle = '#fff';
                             ctx.strokeRect(px, py, cellSize, cellSize);
@@ -222,14 +254,10 @@
                     }
                     else if (tile === 3) { // Teddy
                         drawImageSafe(assets.teddy, px, py, cellSize);
-                        // Lock overlay
+                        // Lock overlay (Darken teddy if seeds not collected)
                         if(seedsCollected < TOTAL_SEEDS) {
                             ctx.fillStyle = 'rgba(0,0,0,0.5)';
                             ctx.fillRect(px, py, cellSize, cellSize);
-                            ctx.font = (cellSize/2)+'px Arial';
-                            ctx.fillStyle = 'white';
-                            ctx.textAlign = 'center';
-                            ctx.fillText("", px + cellSize/2, py + cellSize/1.5);
                         }
                     }
                 }
@@ -285,6 +313,37 @@
             }
         }
 
+        // --- 6. SWIPE CONTROLS (NEW) ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, {passive: false});
+
+        canvas.addEventListener('touchend', (e) => {
+            if(!gameActive) return;
+            e.preventDefault(); // Prevent scrolling while playing
+            
+            let touchEndX = e.changedTouches[0].screenX;
+            let touchEndY = e.changedTouches[0].screenY;
+            
+            let diffX = touchEndX - touchStartX;
+            let diffY = touchEndY - touchStartY;
+
+            // Determine if horizontal or vertical swipe was stronger
+            if(Math.abs(diffX) > Math.abs(diffY)) {
+                if(Math.abs(diffX) > 20) { // Threshold
+                    move(diffX > 0 ? 1 : -1, 0);
+                }
+            } else {
+                if(Math.abs(diffY) > 20) {
+                    move(0, diffY > 0 ? 1 : -1);
+                }
+            }
+        }, {passive: false});
+
         window.addEventListener('keydown', (e) => {
             if(e.key === "ArrowUp") move(0, -1);
             if(e.key === "ArrowDown") move(0, 1);
@@ -292,12 +351,12 @@
             if(e.key === "ArrowRight") move(1, 0);
         });
 
-        // --- 6. STATE ---
+        // --- 7. STATE ---
         document.getElementById('start-btn').addEventListener('click', () => {
             document.getElementById('start-screen').style.display = 'none';
             gameActive = true;
             if(bgm) bgm.play();
-            resize(); // Force redraw on start
+            resize(); 
         });
 
         function winGame() {

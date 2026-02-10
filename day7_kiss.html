@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kiss Day: Kiss Quest</title>
     
-    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fredoka+One&display=swap" rel="stylesheet">
 
-    <script src="lib/gsap.min.js"></script>
-    <script src="lib/howler.min.js"></script>
-    <script src="lib/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         body {
@@ -19,18 +18,18 @@
             font-family: 'Press Start 2P', cursive;
             touch-action: none; user-select: none;
             display: flex; justify-content: center; align-items: center;
+            height: 100dvh; /* Mobile browser fix */
         }
 
         /* --- CONTAINER --- */
         #main-container {
-            position: relative; width: 100vw; height: 100vh;
+            position: relative; width: 100vw; height: 100%;
             overflow: hidden;
-            display: flex; justify-content: center; align-items: center;
         }
 
         /* ================= PART 1: THE FACE ================= */
         #part1-face {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 10;
             background: radial-gradient(circle, #fff 0%, #ffdde1 100%);
@@ -38,33 +37,52 @@
 
         #face-wrapper {
             position: relative;
-            width: 300px; height: 300px; 
+            /* Smart Scaling: Fits perfectly on any screen */
+            width: min(80vw, 50vh); 
+            height: min(80vw, 50vh);
+            margin-bottom: 20px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #cartoon-face {
             width: 100%; height: 100%;
             object-fit: contain;
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.2));
+            pointer-events: none; /* Let clicks pass to wrapper */
         }
 
-        /* Hitboxes */
-        .hitbox { position: absolute; cursor: pointer; }
-        #hit-nose { top: 45%; left: 40%; width: 20%; height: 20%; border-radius: 50%; }
-        #hit-cheek-l { top: 50%; left: 10%; width: 25%; height: 25%; border-radius: 50%; }
-        #hit-cheek-r { top: 50%; right: 10%; width: 25%; height: 25%; border-radius: 50%; }
+        /* Full Face Hitbox */
+        #hit-face {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5;
+            border-radius: 50%; /* Assume circular face graphic */
+        }
+
+        /* Specific Nose Honk (Optional, sits on top) */
+        #hit-nose { 
+            position: absolute; top: 45%; left: 40%; width: 20%; height: 20%; 
+            border-radius: 50%; z-index: 10; cursor: pointer;
+        }
 
         .kiss-mark {
             position: absolute; width: 50px; height: 50px; pointer-events: none;
             background-image: url('assets/d7_kiss_mark.png');
             background-size: contain; background-repeat: no-repeat; opacity: 0;
+            z-index: 15;
+            /* Center the mark on the touch point */
+            transform: translate(-50%, -50%); 
         }
 
-        #counter { margin-top: 20px; color: #e84393; font-size: 1.2rem; }
+        #counter { 
+            margin-top: 10px; color: #e84393; 
+            font-size: clamp(0.8rem, 3vw, 1.2rem); 
+            text-align: center; line-height: 1.5;
+        }
 
         /* ================= PART 2: THE GAME ================= */
         #part2-game {
             display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* UPDATED: Cheerful Candy Gradient Background */
             background: linear-gradient(180deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
             z-index: 20;
         }
@@ -73,9 +91,11 @@
 
         #game-ui {
             position: absolute; top: 20px; left: 20px;
-            color: #d63031; /* Changed text color to pop against pink bg */
-            text-shadow: 2px 2px 0 #fff; /* White outline */
-            font-size: 1.2rem;
+            color: #d63031; 
+            text-shadow: 2px 2px 0 #fff;
+            font-size: clamp(0.8rem, 3vw, 1.2rem);
+            z-index: 25;
+            pointer-events: none;
         }
 
         /* --- LEVEL 2 INTRO --- */
@@ -85,11 +105,12 @@
             z-index: 30;
             flex-direction: column; justify-content: center; align-items: center;
             text-align: center; color: white;
+            padding: 20px; box-sizing: border-box;
         }
 
         .retro-btn {
             background: #e84393; color: white; border: 4px solid white;
-            padding: 20px 30px; font-family: 'Press Start 2P'; font-size: 1rem;
+            padding: 15px 30px; font-family: 'Press Start 2P'; font-size: clamp(0.8rem, 3vw, 1rem);
             cursor: pointer; margin-top: 30px; box-shadow: 6px 6px 0 #000;
         }
         .retro-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0 #000; }
@@ -103,13 +124,14 @@
         }
 
         #photo-frame {
-            background: white; padding: 15px 15px 50px 15px;
+            background: white; padding: 10px 10px 40px 10px;
             box-shadow: 0 0 20px rgba(255,255,255,0.2);
             transform: rotate(-3deg); margin-bottom: 20px;
+            width: 80%; max-width: 300px;
         }
         
         #photo-frame img {
-            max-width: 80vw; max-height: 50vh; border: 1px solid #ddd;
+            width: 100%; height: auto; border: 1px solid #ddd; display: block;
         }
     </style>
 </head>
@@ -118,24 +140,29 @@
     <div id="main-container">
 
         <div id="part1-face">
-            <h1 style="color:#e84393; font-size:1rem; margin-bottom:20px; text-align:center; line-height:1.5;">GIVE ME 7 KISSES!</h1>
+            <h1 style="color:#e84393; font-size:clamp(0.8rem, 4vw, 1.2rem); margin-bottom:20px; text-align:center; line-height:1.5;">
+                GIVE ME 7 KISSES!
+            </h1>
             
             <div id="face-wrapper">
                 <img id="cartoon-face" src="assets/d7_face_cartoon.png" alt="My Face">
-                <div id="hit-nose" class="hitbox" onclick="honkNose()"></div>
-                <div id="hit-cheek-l" class="hitbox" onclick="giveKiss(event)"></div>
-                <div id="hit-cheek-r" class="hitbox" onclick="giveKiss(event)"></div>
+                
+                <div id="hit-face" onclick="giveKiss(event)"></div>
+                
+                <div id="hit-nose" onclick="honkNose(event)"></div>
             </div>
 
-            <div id="counter">Kisses: <span id="kiss-count">0</span>/7</div>
-            <p style="margin-top:10px; font-size:0.6rem; color:#636e72;">(Tap Cheeks to Kiss)</p>
+            <div id="counter">
+                Kisses: <span id="kiss-count">0</span>/7<br>
+                <span style="font-size:0.6rem; color:#636e72; margin-top:5px; display:block;">(Tap face to kiss)</span>
+            </div>
         </div>
 
         <div id="level2-intro">
-            <h1 style="color:#fd79a8; margin-bottom: 20px;">LEVEL 2 UNLOCKED!</h1>
-            <p style="line-height: 1.8; font-size: 0.8rem; max-width: 80%;">
-                Dodge the Enemies:<br>
-                (Laundry, Alarm, Slow Wifi)<br><br>
+            <h1 style="color:#fd79a8; margin-bottom: 20px; font-size: clamp(1rem, 5vw, 1.5rem);">LEVEL 2 UNLOCKED!</h1>
+            <p style="line-height: 1.8; font-size: clamp(0.7rem, 3vw, 1rem); max-width: 80%; font-family: 'Fredoka One', sans-serif;">
+                Dodge the Enemies<br>
+                (Laundry, Alarm, WiFi)<br><br>
                 Catch 10 Hearts ❤️
             </p>
             <button class="retro-btn" onclick="startLevel2()">START GAME</button>
@@ -147,10 +174,10 @@
         </div>
 
         <div id="reward-screen">
-            <h1 style="color:#ffd700; margin-bottom:20px;">WINNER!</h1>
+            <h1 style="color:#ffd700; margin-bottom:20px; font-size: 1.5rem;">WINNER!</h1>
             <div id="photo-frame">
                 <img src="assets/d7_reward.png" alt="Us">
-                <div style="color:#333; font-family:'Fredoka One', sans-serif; font-size:1.5rem; margin-top:10px;">Our Real Kiss ❤️</div>
+                <div style="color:#333; font-family:'Fredoka One', sans-serif; font-size:1.2rem; margin-top:10px;">Our Real Kiss ❤️</div>
             </div>
             <button class="retro-btn" onclick="location.href='index.html'">SAVE MEMORY</button>
         </div>
@@ -176,9 +203,10 @@
         const faceWrapper = document.getElementById('face-wrapper');
         const countEl = document.getElementById('kiss-count');
 
-        function honkNose() {
+        function honkNose(e) {
+            e.stopPropagation(); // Don't trigger kiss if nose is honked
             if(sfxHonk) sfxHonk.play();
-            gsap.to('#cartoon-face', { x: 5, duration: 0.05, yoyo: true, repeat: 5, clearProps:"x" });
+            gsap.to('#cartoon-face', { scale: 1.1, duration: 0.05, yoyo: true, repeat: 1 });
         }
 
         function giveKiss(e) {
@@ -188,21 +216,28 @@
             kisses++;
             countEl.innerText = kisses;
 
-            // Spawn Mark
+            // Spawn Mark exactly where touched
             const mark = document.createElement('div');
             mark.classList.add('kiss-mark');
+            
+            // Get coordinates relative to the wrapper
             const rect = faceWrapper.getBoundingClientRect();
-            let clientX = e.clientX || e.touches[0].clientX;
-            let clientY = e.clientY || e.touches[0].clientY;
+            let clientX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+            let clientY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
 
-            mark.style.left = (clientX - rect.left - 25) + 'px';
-            mark.style.top = (clientY - rect.top - 25) + 'px';
+            // Position inside wrapper
+            mark.style.left = (clientX - rect.left) + 'px';
+            mark.style.top = (clientY - rect.top) + 'px';
+            
             faceWrapper.appendChild(mark);
 
-            gsap.to(mark, { opacity: 1, scale: 1.2, duration: 0.2, yoyo:true, repeat:1, onComplete: () => {
-                gsap.set(mark, {scale: 1, opacity: 0.8});
-            }});
+            // Pop animation
+            gsap.fromTo(mark, 
+                { scale: 0, opacity: 0 }, 
+                { scale: 1, opacity: 0.9, duration: 0.3, ease: "back.out" }
+            );
 
+            // Win Condition
             if(kisses >= GOAL_KISSES) {
                 part2Unlocked = true;
                 setTimeout(showLevel2Intro, 1000);
@@ -234,6 +269,7 @@
         let gameActive = false;
         let score = 0;
         
+        // Safety placeholders
         const playerImg = new Image(); playerImg.src = 'assets/d7_pixel_her.png';
         const enemyImg = new Image(); enemyImg.src = 'assets/d7_enemy.png';
         const heartImg = new Image(); heartImg.src = 'assets/d7_kiss_mark.png';
@@ -241,32 +277,50 @@
         let player = { x: 0, y: 0, w: 60, h: 60 };
         let items = [];
         let spawnInterval;
+        let animationFrameId;
 
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            const container = document.getElementById('part2-game');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+            
             player.y = canvas.height - 100;
-            player.x = canvas.width / 2 - 30;
+            // Keep player inside bounds on resize
+            if(player.x > canvas.width) player.x = canvas.width / 2;
         }
         window.addEventListener('resize', resize);
 
         function initGame() {
             resize();
+            player.x = canvas.width / 2 - 30; // Center player
             gameActive = true;
             score = 0;
             items = [];
+            
+            // Clear any old loops
+            if(spawnInterval) clearInterval(spawnInterval);
+            if(animationFrameId) cancelAnimationFrame(animationFrameId);
+            
             gameLoop();
             spawnInterval = setInterval(spawnItem, 800);
         }
 
         // Controls
+        function movePlayer(clientX) {
+            if(!gameActive) return;
+            player.x = clientX - player.w/2;
+            // Boundary checks
+            if(player.x < 0) player.x = 0;
+            if(player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+        }
+
         canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
-            let touchX = e.touches[0].clientX;
-            player.x = touchX - player.w/2;
-        });
+            movePlayer(e.touches[0].clientX);
+        }, { passive: false });
+        
         canvas.addEventListener('mousemove', (e) => {
-            player.x = e.clientX - player.w/2;
+            movePlayer(e.clientX);
         });
 
         function spawnItem() {
@@ -276,7 +330,8 @@
                 x: Math.random() * (canvas.width - 50),
                 y: -50,
                 type: type,
-                speed: Math.random() * 3 + 3
+                speed: Math.random() * 3 + 3, // Random speed
+                w: 50, h: 50
             });
         }
 
@@ -285,56 +340,69 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // Draw Player
-            if(playerImg.complete) ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-            else { ctx.fillStyle = 'white'; ctx.fillRect(player.x, player.y, player.w, player.h); }
+            if(playerImg.complete && playerImg.naturalWidth > 0) ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+            else { 
+                ctx.fillStyle = '#6c5ce7'; 
+                ctx.fillRect(player.x, player.y, player.w, player.h); 
+            }
 
             // Items
             for(let i=0; i<items.length; i++) {
                 let item = items[i];
                 item.y += item.speed;
 
+                // Draw Item
                 if(item.type === 'heart') {
-                    if(heartImg.complete) ctx.drawImage(heartImg, item.x, item.y, 50, 50);
-                    else { ctx.fillStyle='red'; ctx.fillRect(item.x, item.y, 50, 50); }
+                    if(heartImg.complete) ctx.drawImage(heartImg, item.x, item.y, item.w, item.h);
+                    else { ctx.fillStyle='red'; ctx.fillRect(item.x, item.y, item.w, item.h); }
                 } else {
-                    if(enemyImg.complete) ctx.drawImage(enemyImg, item.x, item.y, 50, 50);
-                    else { ctx.fillStyle='gray'; ctx.fillRect(item.x, item.y, 50, 50); }
+                    if(enemyImg.complete) ctx.drawImage(enemyImg, item.x, item.y, item.w, item.h);
+                    else { ctx.fillStyle='gray'; ctx.fillRect(item.x, item.y, item.w, item.h); }
                 }
 
-                // Collision
-                if(item.y + 50 > player.y && 
-                   item.x < player.x + player.w && 
-                   item.x + 50 > player.x) {
+                // Collision Detection (Simple AABB)
+                if(item.y + item.h > player.y && 
+                   item.y < player.y + player.h &&
+                   item.x + item.w > player.x && 
+                   item.x < player.x + player.w) {
                     
                     if(item.type === 'heart') {
+                        // HIT HEART
                         score++;
                         if(sfxKiss) sfxKiss.play();
                         document.getElementById('score').innerText = score;
+                        
                         items.splice(i, 1);
                         i--;
+                        
                         if(score >= 10) winGame();
                     } else {
-                        // Hit Enemy
+                        // HIT ENEMY
                         if(sfxHit) sfxHit.play();
                         score = Math.max(0, score - 2); 
                         document.getElementById('score').innerText = score;
+                        
+                        // Shake Screen
                         gsap.to('#part2-game', {x:10, duration:0.05, yoyo:true, repeat:3, clearProps:"x"});
+                        
                         items.splice(i, 1);
                         i--;
                     }
                 }
 
+                // Remove off-screen
                 if(item.y > canvas.height) {
                     items.splice(i, 1);
                     i--;
                 }
             }
-            requestAnimationFrame(gameLoop);
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
 
         function winGame() {
             gameActive = false;
             clearInterval(spawnInterval);
+            cancelAnimationFrame(animationFrameId);
             
             // STOP MUSIC
             if(bgmGame) bgmGame.fade(0.4, 0, 2000);
