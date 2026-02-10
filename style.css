@@ -1,0 +1,149 @@
+:root {
+    --bg-color: #1a0b14; /* Deep romantic dark */
+    --card-bg: #2d1b26;
+    --accent: #ff4d6d;   /* Rose Pink */
+    --gold: #ffd700;
+    --text: #fff0f5;
+}
+
+* { 
+    margin: 0; 
+    padding: 0; 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; /* Prevents text selection on mobile */
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text);
+    font-family: 'Press Start 2P', cursive; /* 8-bit style */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.container {
+    text-align: center;
+    width: 90%;
+    max-width: 800px;
+    padding: 20px 0;
+}
+
+header {
+    margin-bottom: 20px;
+}
+
+.title {
+    font-size: 1.8rem;
+    color: var(--accent);
+    text-shadow: 4px 4px 0px #000;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.subtitle {
+    font-family: 'Sacramento', cursive;
+    font-size: 1.8rem;
+    color: var(--gold);
+    margin-bottom: 30px;
+    min-height: 35px; /* Keeps space open for typing effect */
+}
+
+/* --- GRID LAYOUT --- */
+.grid-menu {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Force 2 columns on mobile */
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+/* --- CARD DESIGN --- */
+.card {
+    background: var(--card-bg);
+    padding: 20px 10px;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text);
+    border: 2px solid transparent;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.5); /* Retro 3D shadow */
+}
+
+.card:active {
+    transform: translateY(4px);
+    box-shadow: 0 0 0 rgba(0,0,0,0.5);
+    background-color: #3d2b36;
+}
+
+/* --- EMOJI FIX --- */
+.emoji {
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    font-style: normal;
+}
+
+.icon { 
+    font-size: 2rem; 
+    margin-bottom: 10px; 
+}
+
+.date { 
+    font-size: 0.6rem; 
+    color: #aaa; 
+    text-transform: uppercase; 
+    margin-bottom: 8px; 
+}
+
+.label { 
+    font-size: 0.7rem; 
+    line-height: 1.4; 
+}
+
+/* Special Finale Card */
+.card.final {
+    grid-column: span 2;
+    background: linear-gradient(135deg, #2d1b26 0%, #4a0e20 100%);
+    border: 1px solid var(--accent);
+}
+
+/* Footer */
+footer p {
+    font-size: 0.6rem;
+    color: #666;
+    margin-top: 20px;
+}
+
+/* Desktop override */
+@media (min-width: 600px) {
+    .grid-menu { grid-template-columns: repeat(4, 1fr); }
+    .card.final { grid-column: span 4; }
+}
+
+/* ========================================= */
+/* LOCKED STATE STYLES (NEW)           */
+/* ========================================= */
+.card.locked {
+    filter: grayscale(100%); /* Black & white */
+    opacity: 0.6;            /* Dimmed */
+    cursor: not-allowed;
+    position: relative;
+}
+
+/* Overlay Lock Icon */
+.card.locked::after {
+    content: "🔒";
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    filter: grayscale(0); /* Keep the lock colorful */
+    text-shadow: 0 5px 10px rgba(0,0,0,0.8);
+    z-index: 10;
+}

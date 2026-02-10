@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Promise Day: The Vault</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Kristi&family=Rye&display=swap" rel="stylesheet">
+
+    <script src="lib/gsap.min.js"></script>
+    <script src="lib/howler.min.js"></script>
+    <script src="lib/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            margin: 0; padding: 0; overflow: hidden;
+            background: #2d3436;
+            font-family: 'Share Tech Mono', monospace;
+            color: #dfe6e9;
+        }
+
+        #vault-container {
+            position: relative; width: 100vw; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            perspective: 1500px; /* 3D Depth */
+            background: radial-gradient(circle at center, #2d3436 0%, #000000 100%);
+        }
+
+        /* --- THE VAULT INTERIOR (Behind the door) --- */
+        #safe-interior {
+            position: absolute; width: 85%; height: 70%;
+            background: linear-gradient(to bottom, #444, #222);
+            border-radius: 20px;
+            box-shadow: inset 0 0 50px #000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1;
+            border: 10px solid #555;
+        }
+
+        /* --- THE DOOR (Pure CSS Metal) --- */
+        #vault-door {
+            position: absolute; width: 88%; height: 72%;
+            /* Brushed Metal Look */
+            background: linear-gradient(135deg, #b2bec3 0%, #636e72 50%, #2d3436 100%);
+            border-radius: 15px;
+            border: 8px solid #95a5a6;
+            box-shadow: 
+                inset 2px 2px 5px rgba(255,255,255,0.3),
+                inset -2px -2px 5px rgba(0,0,0,0.5),
+                20px 20px 60px rgba(0,0,0,0.6);
+            z-index: 10;
+            transform-origin: left center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+
+        /* Rivets for detail */
+        #vault-door::after {
+            content: ''; position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 2px dashed #555; border-radius: 10px; pointer-events: none;
+        }
+
+        /* --- STATUS DISPLAY --- */
+        #status-panel {
+            background: #000; border: 2px solid #555;
+            padding: 10px 20px; border-radius: 5px;
+            margin-bottom: 20px; text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        #led {
+            width: 15px; height: 15px; border-radius: 50%;
+            background: #c0392b; /* Red initially */
+            display: inline-block; margin-right: 10px;
+            box-shadow: 0 0 10px #c0392b;
+        }
+        #status-text { color: #c0392b; font-size: 1.2rem; letter-spacing: 2px; }
+
+        /* --- COMBO LOCK --- */
+        #lock-container {
+            background: #2d3436;
+            padding: 15px;
+            border-radius: 10px;
+            border-top: 2px solid #636e72;
+            border-bottom: 4px solid #000;
+            display: flex; gap: 8px;
+            box-shadow: inset 0 0 20px #000;
+            margin-bottom: 25px;
+        }
+
+        .wheel-col {
+            width: 50px; height: 90px;
+            background: linear-gradient(to bottom, #111 0%, #444 50%, #111 100%);
+            color: #fff;
+            border-radius: 4px;
+            border: 1px solid #555;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            text-align: center;
+            font-size: 1.8rem;
+            /* Hide scrollbars */
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .wheel-col::-webkit-scrollbar { display: none; }
+
+        .num {
+            height: 90px; /* Match container height for snap */
+            display: flex; align-items: center; justify-content: center;
+            scroll-snap-align: start;
+            font-family: 'Share Tech Mono';
+        }
+
+        /* --- UNLOCK BUTTON --- */
+        #unlock-btn {
+            background: linear-gradient(to bottom, #e74c3c, #c0392b);
+            color: white; border: none;
+            padding: 15px 40px; font-size: 1.2rem;
+            font-family: 'Share Tech Mono'; font-weight: bold;
+            border-radius: 5px; cursor: pointer;
+            box-shadow: 0 5px 0 #7f8c8d, 0 10px 10px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        #unlock-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #7f8c8d;
+        }
+
+        /* --- HANDLE (Pure CSS Decorative) --- */
+        #handle-deco {
+            width: 120px; height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #b2bec3 30%, #636e72 90%);
+            border: 6px solid #2d3436;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            position: relative;
+            margin-bottom: 20px;
+        }
+        /* Spokes */
+        #handle-deco::before, #handle-deco::after {
+            content: ''; position: absolute; background: #2d3436;
+        }
+        #handle-deco::before { top: 10%; left: 45%; width: 10%; height: 80%; }
+        #handle-deco::after { top: 45%; left: 10%; width: 80%; height: 10%; }
+
+        /* --- INTERIOR PAPER --- */
+        #contract-paper {
+            background: #f1f2f6; width: 90%; max-width: 350px;
+            padding: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transform: rotate(-2deg); color: #2d3436;
+            text-align: center; font-family: 'Times New Roman', serif;
+            opacity: 0; /* Hidden initially */
+        }
+        textarea {
+            width: 100%; height: 80px;
+            border: 2px dashed #b2bec3;
+            padding: 10px; font-family: 'Kristi', cursive; font-size: 1.5rem;
+            margin: 10px 0; resize: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="vault-container">
+        
+        <div id="safe-interior">
+            <div id="contract-paper">
+                <h2 style="font-family:'Rye'; margin:0; color:#c0392b;">OUR PROMISE</h2>
+                <p style="font-size:0.8rem; color:#636e72;">Date: 14-02-26</p>
+                <p>I, <span style="font-family:'Kristi'; font-size:1.5rem">Mrs. Tanvir</span>, promise:</p>
+                
+                <textarea id="promise-text" placeholder="Type promise here..."></textarea>
+                
+                <button id="unlock-btn" style="background:#27ae60; box-shadow:0 5px 0 #1e8449;" onclick="sealPromise()">SEAL CONTRACT</button>
+            </div>
+        </div>
+
+        <div id="vault-door">
+            <div id="status-panel">
+                <div id="led"></div>
+                <span id="status-text">LOCKED</span>
+            </div>
+
+            <div id="handle-deco"></div>
+
+            <div id="lock-container">
+                <div class="wheel-col" id="col-day"></div>
+                <div class="wheel-col" id="col-month"></div>
+                <div class="wheel-col" id="col-year"></div>
+            </div>
+
+            <button id="unlock-btn" onclick="checkPassword()">OPEN VAULT</button>
+            
+            <div style="margin-top:10px; font-size:0.7rem; color:#636e72;">SECURE SYSTEM v2.0</div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. SETUP ---
+        const sfxSpin = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.1, rate: 2.0 });
+        const sfxError = new Howl({ src: ['assets/sfx_jump.mp3'], rate: 0.5, volume: 1.0 }); // Use low pitch for error
+        const sfxSuccess = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
+
+        // --- 2. POPULATE WHEELS ---
+        function populateWheel(id, max) {
+            const el = document.getElementById(id);
+            // Padding
+            el.innerHTML += `<div class="num" style="height:90px;">-</div>`;
+            
+            for(let i=1; i<=max; i++) {
+                let val = i < 10 ? "0"+i : i;
+                el.innerHTML += `<div class="num" data-val="${val}">${val}</div>`;
+            }
+            // Padding
+            el.innerHTML += `<div class="num" style="height:90px;">-</div>`;
+        }
+
+        populateWheel('col-day', 31);
+        populateWheel('col-month', 12);
+        populateWheel('col-year', 99);
+
+        // --- 3. SCROLL AUDIO ---
+        document.querySelectorAll('.wheel-col').forEach(col => {
+            col.addEventListener('scroll', () => {
+                if(Math.random() > 0.8) sfxSpin.play();
+            });
+        });
+
+        // --- 4. CHECK PASSWORD LOGIC ---
+        function checkPassword() {
+            // Get Values
+            const getVal = (id) => {
+                const el = document.getElementById(id);
+                // 90px is item height
+                const index = Math.round(el.scrollTop / 90); 
+                const items = el.querySelectorAll('.num[data-val]');
+                if(items[index-1]) return items[index-1].getAttribute('data-val');
+                return "00";
+            };
+
+            const d = getVal('col-day');
+            const m = getVal('col-month');
+            const y = getVal('col-year');
+
+            console.log(`Input: ${d}-${m}-${y}`);
+
+            // TARGET: 27 - 09 - 24
+            if (d === "27" && m === "09" && y === "24") {
+                grantAccess();
+            } else {
+                denyAccess();
+            }
+        }
+
+        function denyAccess() {
+            sfxError.play();
+            
+            // 1. Visual Feedback
+            const led = document.getElementById('led');
+            const text = document.getElementById('status-text');
+            const door = document.getElementById('vault-door');
+
+            text.innerText = "ACCESS DENIED";
+            led.style.background = "red";
+            
+            // 2. Shake Animation
+            gsap.to(door, { x: 10, duration: 0.05, yoyo: true, repeat: 5, clearProps:"x" });
+            
+            // 3. Blink LED
+            gsap.to(led, { opacity: 0, duration: 0.1, yoyo: true, repeat: 5, clearProps:"opacity" });
+        }
+
+        function grantAccess() {
+            sfxSuccess.play();
+
+            const led = document.getElementById('led');
+            const text = document.getElementById('status-text');
+            
+            text.innerText = "GRANTED";
+            text.style.color = "#2ecc71";
+            led.style.background = "#2ecc71";
+            led.style.boxShadow = "0 0 15px #2ecc71";
+
+            // Open Animation
+            gsap.to('#handle-deco', { rotation: 360, duration: 1, ease: "back.out" });
+
+            setTimeout(() => {
+                // Swing Door
+                gsap.to('#vault-door', { 
+                    rotationY: -110, 
+                    x: -50,
+                    duration: 2, 
+                    ease: "power2.inOut" 
+                });
+                
+                // Show Contract
+                gsap.to('#contract-paper', { opacity: 1, delay: 0.5, duration: 1 });
+            }, 800);
+        }
+
+        // --- 5. PDF LOGIC ---
+        async function sealPromise() {
+            const userPromise = document.getElementById('promise-text').value;
+            
+            if(!userPromise) {
+                alert("Please type a promise!");
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // PDF Design
+            doc.setLineWidth(1);
+            doc.rect(10, 10, 190, 277); // Border
+            
+            doc.setFont("times", "bold");
+            doc.setFontSize(22);
+            doc.text("OUR ETERNAL PROMISE", 105, 40, null, null, "center");
+            
+            doc.setFontSize(12);
+            doc.setFont("times", "normal");
+            doc.text("Date: September 27, 2024", 105, 50, null, null, "center");
+
+            doc.setFontSize(14);
+            doc.text("I, the undersigned, hereby promise:", 20, 80);
+            
+            // Her Handwritten text
+            doc.setFont("courier", "italic");
+            doc.setTextColor(200, 0, 0); 
+            const splitText = doc.splitTextToSize(userPromise, 170);
+            doc.text(splitText, 20, 95);
+            
+            // Your text
+            doc.setTextColor(0, 0, 0);
+            doc.setFont("times", "normal");
+            doc.text("In return, I promise to be your shield, your support,", 20, 140);
+            doc.text("and your biggest fan, forever.", 20, 148);
+
+            // Signatures
+            doc.line(20, 200, 80, 200);
+            doc.text("Her Signature", 30, 205);
+
+            doc.line(130, 200, 190, 200);
+            doc.text("Tanvir's Signature", 140, 205);
+
+            doc.save("Promise_Contract.pdf");
+            
+            confetti({ particleCount: 200, spread: 100 });
+            
+            setTimeout(() => {
+                alert("Promise Saved! ❤");
+                window.location.href = 'index.html';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

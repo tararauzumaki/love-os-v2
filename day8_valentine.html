@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Happy Valentine's Day ❤️</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:wght@400;700&family=Quicksand:wght@500&display=swap" rel="stylesheet">
+
+    <script src="lib/gsap.min.js"></script>
+    <script src="lib/howler.min.js"></script>
+    <script src="lib/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: #ffdde1;
+            font-family: 'Playfair Display', serif;
+            color: #2d3436;
+            overflow-x: hidden; /* Hide horizontal scroll */
+        }
+
+        /* --- LOADING / LOCK SCREEN --- */
+        #lock-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #fff 0%, #ffdde1 100%);
+            z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
+            transition: transform 1s cubic-bezier(0.7, 0, 0.3, 1);
+        }
+
+        #heart-lock {
+            font-size: 8rem; cursor: pointer;
+            filter: drop-shadow(0 10px 20px rgba(232, 67, 147, 0.4));
+            transition: transform 0.1s;
+            user-select: none;
+        }
+        #heart-lock:active { transform: scale(0.9); }
+
+        .instruction {
+            font-family: 'Quicksand', sans-serif; color: #e84393; margin-top: 20px;
+            font-weight: bold; animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+        /* --- MAIN CONTENT (THE LETTER) --- */
+        #main-content {
+            display: none; /* Hidden until unlocked */
+            width: 100%; min-height: 100vh;
+            background: #fff0f3;
+            padding-bottom: 50px;
+        }
+
+        /* Hero Image */
+        header {
+            width: 100%; height: 40vh;
+            background-image: url('assets/us_forever.png'); /* Using previous reward as hero */
+            background-size: cover; background-position: center;
+            position: relative;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        .letter-container {
+            padding: 20px 30px;
+            max-width: 600px; margin: -50px auto 0;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            position: relative;
+            line-height: 1.8; font-size: 1.1rem;
+        }
+
+        /* Paper Texture effect */
+        .letter-container::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: repeating-linear-gradient(45deg, #e84393, #e84393 10px, white 10px, white 20px);
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive; font-size: 3rem; color: #d63031;
+            text-align: center; margin-bottom: 30px; margin-top: 10px;
+        }
+
+        p { margin-bottom: 20px; color: #555; }
+
+        /* --- MEMORY GALLERY --- */
+        .gallery {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;
+            margin-top: 40px;
+        }
+
+        .polaroid {
+            background: white; padding: 10px 10px 30px 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: rotate(var(--r));
+            transition: transform 0.3s;
+        }
+        .polaroid:hover { transform: scale(1.05) rotate(0deg); z-index: 10; }
+        
+        .polaroid img { width: 100%; border-radius: 3px; }
+        .polaroid span {
+            display: block; text-align: center; font-family: 'Dancing Script'; 
+            color: #888; font-size: 1.2rem; margin-top: 10px;
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            text-align: center; margin-top: 50px; padding-bottom: 30px;
+        }
+        .btn-restart {
+            background: #d63031; color: white; border: none;
+            padding: 15px 40px; font-family: 'Quicksand'; font-weight: bold;
+            border-radius: 50px; cursor: pointer; font-size: 1rem;
+            box-shadow: 0 5px 15px rgba(214, 48, 49, 0.4);
+        }
+
+        /* Floating Hearts BG */
+        .floating-heart {
+            position: fixed; font-size: 1.5rem; color: #ff7675; pointer-events: none; z-index: 0;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="lock-screen">
+        <div id="heart-lock" onclick="tapHeart()">❤️</div>
+        <div class="instruction">Tap 14 times to Unlock<br><span id="tap-count">0</span>/14</div>
+    </div>
+
+    <div id="main-content">
+        <header></header>
+        
+        <div class="letter-container">
+            <h1>My Dearest Valentine</h1>
+            
+            <p><strong>To Mrs. Tanvir,</strong></p>
+            
+            <p>From the first bug we fixed to the "System Crash" of falling in love, it's been the best adventure of my life.</p>
+            
+            <p>You are the CSS to my HTML, making everything beautiful. You are the Logic to my Code, making everything make sense.</p>
+            
+            <p>This week was just a small digital collection of my feelings. But the real love is in the tea we share, the anime we watch, and the silent moments where I just look at you and realize how lucky I am.</p>
+            
+            <p>I promise to keep debugging our problems and updating our happiness, forever. v1.0 to Infinity.</p>
+            
+            <p style="text-align: right; font-weight: bold; margin-top: 30px;">- Your Tanvir</p>
+
+            <div class="gallery">
+                <div class="polaroid" style="--r: -3deg;">
+                    <img src="assets/d1_rose.png" alt="Rose">
+                    <span>The Beginning</span>
+                </div>
+                <div class="polaroid" style="--r: 4deg;">
+                    <img src="assets/d3_gold_choco.png" alt="Sweet">
+                    <span>Sweet Moments</span>
+                </div>
+                <div class="polaroid" style="--r: -2deg;">
+                    <img src="assets/d4_teddy.png" alt="Cuddles">
+                    <span>Soft Hugs</span>
+                </div>
+                <div class="polaroid" style="--r: 3deg;">
+                    <img src="assets/d7_reward.png" alt="Kiss">
+                    <span>Us Forever</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p>Happy Valentine's Day 2026</p>
+                <button class="btn-restart" onclick="location.href='index.html'">Replay Our Week ↺</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- AUDIO ---
+        let bgm;
+        const sfxPop = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.5 });
+        const sfxUnlock = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
+
+        try {
+            bgm = new Howl({ 
+                src: ['assets/bgm_romantic.mp3'], 
+                loop: true, 
+                volume: 0.6,
+                autoplay: false 
+            });
+        } catch(e) {}
+
+        // --- LOCK LOGIC ---
+        let taps = 0;
+        const GOAL = 14;
+        const heart = document.getElementById('heart-lock');
+        const countEl = document.getElementById('tap-count');
+        const lockScreen = document.getElementById('lock-screen');
+        const mainContent = document.getElementById('main-content');
+
+        function tapHeart() {
+            taps++;
+            countEl.innerText = taps;
+            sfxPop.play();
+
+            // Heart Beat Animation
+            gsap.fromTo(heart, { scale: 0.8 }, { scale: 1.2, duration: 0.1, yoyo: true, repeat: 1 });
+
+            if (taps === GOAL) {
+                unlockLove();
+            }
+        }
+
+        function unlockLove() {
+            sfxUnlock.play();
+            if(bgm) bgm.play();
+            confetti({ particleCount: 300, spread: 150, zIndex: 200 });
+
+            // Animate Unlock
+            gsap.to(heart, { scale: 20, opacity: 0, duration: 1, ease: "power2.in" });
+            
+            // Slide up lock screen
+            setTimeout(() => {
+                lockScreen.style.transform = "translateY(-100%)";
+                mainContent.style.display = "block";
+                
+                // Animate Content In
+                gsap.from(".letter-container", { y: 100, opacity: 0, duration: 1.5, ease: "power3.out", delay: 0.5 });
+                
+                startFloatingHearts();
+            }, 800);
+        }
+
+        // --- BACKGROUND FLOATING HEARTS ---
+        function startFloatingHearts() {
+            setInterval(() => {
+                const h = document.createElement('div');
+                h.classList.add('floating-heart');
+                h.innerHTML = "❤";
+                h.style.left = Math.random() * 100 + "vw";
+                h.style.top = "100vh";
+                h.style.fontSize = Math.random() * 20 + 10 + "px";
+                document.body.appendChild(h);
+
+                gsap.to(h, {
+                    y: -window.innerHeight - 50,
+                    x: (Math.random() - 0.5) * 100, // Slight Sway
+                    rotation: Math.random() * 360,
+                    duration: Math.random() * 5 + 5,
+                    onComplete: () => h.remove()
+                });
+            }, 500);
+        }
+
+    </script>
+</body>
+</html>

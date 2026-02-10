@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rose Day: Pixel Run</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <script src="lib/gsap.min.js"></script>
+    <script src="lib/howler.min.js"></script>
+    <script src="lib/confetti.browser.min.js"></script>
+
+    <style>
+        body { 
+            margin: 0; overflow: hidden; 
+            background: #87CEEB; 
+            font-family: 'Press Start 2P', cursive; 
+            touch-action: none; user-select: none;
+        }
+        
+        #game-container {
+            position: relative; width: 100vw; height: 100vh; overflow: hidden;
+        }
+
+        /* --- ASSETS --- */
+        .ground {
+            position: absolute; bottom: 0; width: 100%; height: 128px;
+            background-image: url('assets/d1_ground.png');
+            background-repeat: repeat-x; background-size: auto 100%; 
+            z-index: 2;
+            animation: scrollGround 2s linear infinite;
+        }
+
+        @keyframes scrollGround {
+            from { background-position: 0 0; }
+            to { background-position: -128px 0; }
+        }
+
+        #player {
+            position: absolute; bottom: 110px; left: 15vw;
+            width: 80px; height: 80px; z-index: 10;
+            background-image: url('assets/d1_player.png');
+            background-size: contain; background-repeat: no-repeat;
+            image-rendering: pixelated;
+        }
+
+        .bug {
+            position: absolute; bottom: 115px; right: -100px;
+            width: 60px; height: 60px; z-index: 5;
+            background-image: url('assets/d1_obstacle.png'); 
+            background-size: contain; background-repeat: no-repeat;
+            image-rendering: pixelated;
+        }
+
+        #goal-rose {
+            position: absolute; bottom: 110px; right: -150px;
+            width: 80px; height: 80px; z-index: 5;
+            background-image: url('assets/d1_rose.png');
+            background-size: contain; background-repeat: no-repeat;
+            display: none; 
+        }
+
+        /* --- UI --- */
+        #ui-layer { position: absolute; top: 15%; width: 100%; text-align: center; z-index: 20; pointer-events: none; }
+        
+        h1#msg { 
+            color: white; text-shadow: 4px 4px #000; 
+            font-size: 1.2rem; margin: 0; line-height: 1.5;
+        }
+
+        /* --- SCREENS --- */
+        .screen-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 11, 20, 0.95);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            flex-direction: column;
+            z-index: 50;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .screen-overlay h1 {
+            color: #ff4d6d;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+            line-height: 1.5;
+            text-shadow: 4px 4px 0 #000;
+        }
+
+        .screen-overlay p {
+            color: white; 
+            font-size: 0.9rem; 
+            text-align: center; 
+            line-height: 1.8;
+            max-width: 300px;
+            margin-bottom: 30px;
+        }
+
+        .retro-btn {
+            background: #ff4757; color: white;
+            border: 4px solid white; padding: 20px 30px;
+            font-size: 1rem; font-family: 'Press Start 2P', cursive;
+            cursor: pointer; box-shadow: 6px 6px 0px #000;
+            text-transform: uppercase;
+        }
+        .retro-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px #000; }
+        
+        .hidden { display: none !important; }
+        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.6; z-index: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        
+        <div id="ui-layer"><h1 id="msg">SURVIVE FOR THE ROSE!</h1></div>
+
+        <div id="start-screen" class="screen-overlay">
+            <h1>MISSION: ROSE</h1>
+            <p>
+                Avoid the Devils.<br>
+                Survive 15 Seconds.<br>
+                Catch the Rose.
+            </p>
+            <button id="start-btn" class="retro-btn">START</button>
+        </div>
+
+        <div id="game-over-screen" class="screen-overlay hidden">
+            <h1 style="color:#ff3f34;">GAME OVER</h1>
+            <p>The Devil got you!</p>
+            <button id="restart-btn" class="retro-btn">TRY AGAIN</button>
+        </div>
+
+        <div id="win-screen" class="screen-overlay hidden">
+            <h1 style="color:#ff4757;">ROSE CAUGHT! 🌹</h1>
+            <p>
+                Happy Valentine's Week,<br>my love.
+            </p>
+            <button class="retro-btn" onclick="location.href='index.html'">CONTINUE ❤️</button>
+        </div>
+
+        <div id="player"></div>
+        <div id="goal-rose"></div>
+        <div class="ground"></div>
+
+        <div class="cloud" style="top: 20px; left: 10%; width: 100px; height: 40px;"></div>
+        <div class="cloud" style="top: 60px; left: 60%; width: 140px; height: 50px;"></div>
+    </div>
+
+    <script>
+        // --- SETUP ---
+        const bgm = new Howl({ src: ['assets/bgm_game.mp3'], loop: true, volume: 0.4 });
+        const sfxJump = new Howl({ src: ['assets/sfx_jump.mp3'], volume: 0.6 });
+        const sfxWin = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
+        const sfxHit = new Howl({ src: ['assets/sfx_unlock.mp3'], volume: 1.0 }); 
+
+        const GAME_DURATION = 15000; 
+        const JUMP_HEIGHT = 180;
+
+        const player = document.getElementById('player');
+        const container = document.getElementById('game-container');
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const winScreen = document.getElementById('win-screen');
+        const msg = document.getElementById('msg');
+        const rose = document.getElementById('goal-rose');
+        const ground = document.querySelector('.ground');
+
+        let isJumping = false;
+        let gameActive = false;
+        let bugInterval;
+        let winTimeout;
+        let roseTween;
+
+        // --- GAME ACTIONS ---
+        function jump() {
+            if (isJumping || !gameActive) return;
+            isJumping = true;
+            sfxJump.play();
+            
+            gsap.to(player, { 
+                y: -JUMP_HEIGHT, duration: 0.45, ease: "power2.out", 
+                onComplete: () => {
+                    gsap.to(player, { 
+                        y: 0, duration: 0.5, ease: "bounce.out", 
+                        onComplete: () => isJumping = false 
+                    });
+                }
+            });
+        }
+
+        function spawnBug() {
+            if (!gameActive) return;
+            
+            const bug = document.createElement('div');
+            bug.classList.add('bug');
+            container.appendChild(bug);
+
+            gsap.to(bug, { 
+                x: -window.innerWidth - 150, 
+                duration: 2.0 + Math.random(), 
+                ease: "none",
+                onUpdate: () => {
+                    // Check collision repeatedly during animation
+                    if (gameActive && checkCollision(player, bug)) {
+                        gameOver();
+                    }
+                },
+                onComplete: () => bug.remove() 
+            });
+        }
+
+        function checkCollision(p, b) {
+            const pRect = p.getBoundingClientRect();
+            const bRect = b.getBoundingClientRect();
+            const buffer = 25; 
+            return !(pRect.right < bRect.left + buffer || pRect.left > bRect.right - buffer || pRect.bottom < bRect.top + buffer || pRect.top > bRect.bottom - buffer);
+        }
+
+        // --- GAME OVER ---
+        function gameOver() {
+            gameActive = false;
+            clearInterval(bugInterval);
+            clearTimeout(winTimeout);
+            if(roseTween) roseTween.kill();
+
+            gsap.killTweensOf(".bug"); 
+            ground.style.animationPlayState = 'paused';
+            bgm.stop();
+            sfxHit.play();
+
+            msg.innerText = "CRASHED!";
+            gsap.to(player, { rotation: 90, duration: 0.2 });
+
+            setTimeout(() => { gameOverScreen.classList.remove('hidden'); }, 500);
+        }
+
+        // --- WIN SEQUENCE (Catch the Rose) ---
+        function startRoseSequence() {
+            if(!gameActive) return;
+            
+            clearInterval(bugInterval);
+            msg.innerText = "GRAB THE ROSE!";
+
+            rose.style.display = 'block';
+            
+            // Rose moves from Right to Left
+            roseTween = gsap.fromTo(rose, 
+                { x: window.innerWidth }, 
+                { 
+                    x: -window.innerWidth, 
+                    duration: 3, 
+                    ease: "none",
+                    onUpdate: () => {
+                        if (gameActive && checkCollision(player, rose)) {
+                            triggerWin();
+                        }
+                    },
+                    onComplete: () => {
+                        // If missed, loop it again if game still active
+                        if(gameActive) startRoseSequence();
+                    }
+                }
+            );
+        }
+
+        function triggerWin() {
+            gameActive = false;
+            if(roseTween) roseTween.kill();
+            ground.style.animationPlayState = 'paused';
+            
+            bgm.stop();
+            sfxWin.play();
+            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+
+            msg.innerHTML = "HAPPY ROSE DAY!";
+            
+            // Show new Win Screen
+            setTimeout(() => {
+                winScreen.classList.remove('hidden');
+            }, 500);
+        }
+
+        // --- START ---
+        function startGame() {
+            startScreen.classList.add('hidden');
+            gameOverScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+            msg.innerText = "RUN!";
+            
+            // Reset
+            document.querySelectorAll('.bug').forEach(b => b.remove());
+            rose.style.display = 'none';
+            gsap.set(player, { rotation: 0, y: 0 });
+            ground.style.animationPlayState = 'running';
+
+            gameActive = true;
+            isJumping = false;
+            bgm.play();
+
+            spawnBug();
+            bugInterval = setInterval(spawnBug, 1600);
+            winTimeout = setTimeout(startRoseSequence, GAME_DURATION);
+        }
+
+        startBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', startGame);
+
+        window.addEventListener('touchstart', (e) => {
+            if(e.target !== startBtn && e.target !== restartBtn && !winScreen.contains(e.target)) jump();
+        });
+        window.addEventListener('keydown', (e) => { if(e.code === 'Space') jump(); });
+
+    </script>
+</body>
+</html>
