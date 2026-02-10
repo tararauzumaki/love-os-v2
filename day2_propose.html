@@ -63,6 +63,14 @@
             display: none; flex-direction: column; justify-content: center; align-items: center; gap: 20px;
         }
 
+        /* Update this in the <style> section of EVERY file */
+body, #game-container, #main-container {
+    height: 100vh;       /* Fallback */
+    height: 100dvh;      /* <--- Dynamic Viewport Height (The Fix) */
+    overflow: hidden;    /* Prevents scrolling */
+}
+
+
         .choice-btn {
             background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
             border: 4px solid white; padding: 20px 40px; border-radius: 50px;
@@ -104,6 +112,8 @@
             <p style="font-size: 1.2rem; margin-bottom: 30px;">The Question</p>
             <button class="choice-btn" id="start-btn">Start Story</button>
         </div>
+
+        
 
         <div id="dialogue-box" style="display:none;">
             <div id="speaker-name">Tanvir</div>
