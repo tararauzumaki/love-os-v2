@@ -3,40 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rose Day: Pixel Run</title>
+    <title>Rose Day: Love Run</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
-            /* Variables to keep positions synced */
             --ground-height: 120px;
             --player-size: 80px;
             --obs-size: 60px;
+            --item-size: 40px;
         }
 
         body { 
             margin: 0; overflow: hidden; 
-            background: #87CEEB; 
+            /* UPGRADE: Romantic Gradient Background */
+            background: linear-gradient(180deg, #ffafbd 0%, #ffc3a0 100%);
             font-family: 'Press Start 2P', cursive; 
             touch-action: none; user-select: none;
-            /* Prevent pull-to-refresh on mobile */
             overscroll-behavior: none;
         }
         
         #game-container {
-            position: relative; 
-            width: 100vw; 
-            /* use dvh to account for mobile URL bars */
-            height: 100dvh; 
-            overflow: hidden;
+            position: relative; width: 100vw; height: 100dvh; overflow: hidden;
         }
 
-        /* --- ASSETS --- */
+        /* --- BACKGROUND DECORATION --- */
+        .petal {
+            position: absolute;
+            background: #ff4d6d;
+            width: 8px; height: 8px;
+            border-radius: 2px 8px 2px 8px;
+            opacity: 0.6;
+            z-index: 1;
+            pointer-events: none;
+        }
+
         .ground {
             position: absolute; bottom: 0; left: 0; width: 100%; 
             height: var(--ground-height);
@@ -44,6 +49,7 @@
             background-repeat: repeat-x; background-size: auto 100%; 
             z-index: 2;
             animation: scrollGround 2s linear infinite;
+            box-shadow: 0px -5px 15px rgba(0,0,0,0.1); /* Adds depth */
         }
 
         @keyframes scrollGround {
@@ -51,9 +57,9 @@
             to { background-position: -128px 0; }
         }
 
+        /* --- CHARACTERS --- */
         #player {
             position: absolute; 
-            /* Sit exactly on top of the ground height minus a tiny overlap if needed */
             bottom: calc(var(--ground-height) - 15px); 
             left: 10vw;
             width: var(--player-size); height: var(--player-size); z-index: 10;
@@ -62,14 +68,24 @@
             image-rendering: pixelated;
         }
 
+        /* FIX: Adjusted bottom offset to fix floating enemy */
         .bug {
             position: absolute; 
-            bottom: calc(var(--ground-height) - 10px); 
+            /* Changed from -10px to -25px to sit flush on ground */
+            bottom: calc(var(--ground-height) - 25px); 
             right: -100px;
             width: var(--obs-size); height: var(--obs-size); z-index: 5;
             background-image: url('assets/d1_obstacle.png'); 
             background-size: contain; background-repeat: no-repeat;
             image-rendering: pixelated;
+        }
+
+        .heart-item {
+            position: absolute;
+            width: var(--item-size); height: var(--item-size);
+            background-image: url('https://cdn-icons-png.flaticon.com/512/210/210545.png'); /* Generic pixel heart or use assets/d1_heart.png if you have one */
+            background-size: contain; background-repeat: no-repeat;
+            z-index: 5;
         }
 
         #goal-rose {
@@ -80,146 +96,182 @@
             background-image: url('assets/d1_rose.png');
             background-size: contain; background-repeat: no-repeat;
             display: none; 
+            filter: drop-shadow(0 0 10px gold); /* Glow effect */
         }
 
-        /* --- RESPONSIVE FIXES --- */
-        /* If screen is short (landscape mobile) or small, shrink elements */
+        /* --- RESPONSIVE --- */
         @media (max-height: 600px) {
             :root {
                 --ground-height: 80px;
                 --player-size: 60px;
                 --obs-size: 45px;
+                --item-size: 30px;
             }
         }
 
         /* --- UI --- */
-        #ui-layer { position: absolute; top: 10%; width: 100%; text-align: center; z-index: 20; pointer-events: none; }
+        #ui-layer { 
+            position: absolute; top: 20px; width: 100%; 
+            display: flex; flex-direction: column; align-items: center;
+            z-index: 20; pointer-events: none; 
+        }
         
+        #score-board {
+            display: flex; gap: 10px; align-items: center;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 10px 20px; border-radius: 20px;
+            border: 2px solid white;
+        }
+        #hearts-count { color: #ff4757; font-size: 1.2rem; }
+
         h1#msg { 
-            color: white; text-shadow: 3px 3px #000; 
-            font-size: clamp(0.8rem, 4vw, 1.2rem); /* Responsive font size */
-            margin: 0; line-height: 1.5; padding: 0 10px;
+            color: white; text-shadow: 2px 2px #ff4757; 
+            font-size: clamp(0.6rem, 3vw, 1rem); 
+            margin-top: 10px;
         }
 
         /* --- SCREENS --- */
         .screen-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(26, 11, 20, 0.95);
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            flex-direction: column;
-            z-index: 50;
-            padding: 20px;
-            box-sizing: border-box;
-            text-align: center;
+            background: rgba(45, 10, 20, 0.95);
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            z-index: 50; padding: 20px; box-sizing: border-box; text-align: center;
+            transition: opacity 0.5s;
         }
 
         .screen-overlay h1 {
-            color: #ff4d6d;
-            margin-bottom: 15px;
-            text-align: center;
-            width: 100%;
-            line-height: 1.5;
-            font-size: clamp(1.2rem, 5vw, 2rem);
-            text-shadow: 4px 4px 0 #000;
+            color: #ff4d6d; margin-bottom: 15px; line-height: 1.5;
+            font-size: clamp(1.5rem, 6vw, 2.5rem); text-shadow: 4px 4px 0 #000;
         }
 
         .screen-overlay p {
-            color: white; 
-            font-size: clamp(0.7rem, 3vw, 0.9rem); 
-            text-align: center; 
-            line-height: 1.8;
-            max-width: 90%;
-            margin-bottom: 25px;
+            color: #fff0f3; font-size: clamp(0.8rem, 3vw, 1rem); 
+            line-height: 1.8; max-width: 600px; margin-bottom: 30px;
         }
 
         .retro-btn {
             background: #ff4757; color: white;
-            border: 4px solid white; padding: 15px 25px;
-            font-size: clamp(0.8rem, 3vw, 1rem); 
+            border: 4px solid white; padding: 15px 30px;
+            font-size: clamp(0.8rem, 3vw, 1.2rem); 
             font-family: 'Press Start 2P', cursive;
-            cursor: pointer; box-shadow: 4px 4px 0px #000;
-            text-transform: uppercase;
+            cursor: pointer; box-shadow: 6px 6px 0px rgba(0,0,0,0.5);
+            text-transform: uppercase; transition: transform 0.1s;
         }
-        .retro-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px #000; }
+        .retro-btn:active { transform: translate(4px, 4px); box-shadow: 2px 2px 0px rgba(0,0,0,0.5); }
         
-        .hidden { display: none !important; }
-        .cloud { position: absolute; background: white; border-radius: 50px; opacity: 0.6; z-index: 1; }
+        .hidden { opacity: 0; pointer-events: none; }
+        
+        /* Letter Style for Win Screen */
+        .love-letter {
+            background: #fff; color: #333;
+            padding: 20px; border-radius: 5px;
+            transform: rotate(-2deg);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            max-width: 80%;
+            margin-bottom: 30px;
+        }
     </style>
 </head>
 <body>
 
     <div id="game-container">
-        
-        <div id="ui-layer"><h1 id="msg">SURVIVE FOR THE ROSE!</h1></div>
+        <div id="petals-container"></div>
+
+        <div id="ui-layer">
+            <div id="score-board">
+                <span>❤</span> <span id="hearts-count">0</span>
+            </div>
+            <h1 id="msg">SURVIVE FOR LOVE!</h1>
+        </div>
 
         <div id="start-screen" class="screen-overlay">
-            <h1>MISSION: ROSE</h1>
+            <h1>ROSE DAY MISSION</h1>
             <p>
-                Avoid the Devils.<br>
-                Survive 15 Seconds.<br>
-                Catch the Rose.
+                Run towards the Rose.<br>
+                Jump over the haters.<br>
+                Collect hearts for bonus love!
             </p>
-            <button id="start-btn" class="retro-btn">START</button>
+            <button id="start-btn" class="retro-btn">START RUN</button>
         </div>
 
         <div id="game-over-screen" class="screen-overlay hidden">
-            <h1 style="color:#ff3f34;">GAME OVER</h1>
-            <p>The Devil got you!</p>
-            <button id="restart-btn" class="retro-btn">TRY AGAIN</button>
+            <h1 style="color:#ff3f34;">OH NO!</h1>
+            <p>Love takes persistence.<br>Try again?</p>
+            <button id="restart-btn" class="retro-btn">RETRY</button>
         </div>
 
         <div id="win-screen" class="screen-overlay hidden">
-            <h1 style="color:#ff4757;">ROSE CAUGHT! </h1>
-            <p>
-                Happy Valentine's Week,<br>my love.
-            </p>
-            <button class="retro-btn" onclick="location.href='index.html'">CONTINUE </button>
+            <h1>HAPPY ROSE DAY!</h1>
+            <div class="love-letter">
+                <p style="color: #d63031; margin:0;">
+                    "Unlike this game, I'll always run to you.<br>
+                For now, accept this rose as a symbol of my love."
+                </p>
+            </div>
+            <button class="retro-btn" onclick="location.href='index.html'">MY REWARD ❤️</button>
         </div>
 
         <div id="player"></div>
         <div id="goal-rose"></div>
         <div class="ground"></div>
-
-        <div class="cloud" style="top: 5%; left: 10%; width: 100px; height: 40px;"></div>
-        <div class="cloud" style="top: 15%; left: 60%; width: 140px; height: 50px;"></div>
     </div>
 
     <script>
         // --- SETUP ---
+        // Note: Ensure your audio files exist in 'assets/'
         const bgm = new Howl({ src: ['assets/bgm_game.mp3'], loop: true, volume: 0.4 });
-        const sfxJump = new Howl({ src: ['assets/sfx_jump.mp3'], volume: 0.6 });
+        const sfxJump = new Howl({ src: ['assets/sfx_jump.mp3'], volume: 0.5 });
         const sfxWin = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
         const sfxHit = new Howl({ src: ['assets/sfx_unlock.mp3'], volume: 1.0 }); 
+        const sfxCollect = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.6 }); // New Sound if you have it
 
         const GAME_DURATION = 15000; 
-        
-        // Dynamic Jump Height: calculate based on screen height
-        // This prevents jumping out of view on small landscape phones
-        let JUMP_HEIGHT = Math.min(window.innerHeight * 0.5, 180);
+        let JUMP_HEIGHT = Math.min(window.innerHeight * 0.5, 200);
 
         const player = document.getElementById('player');
         const container = document.getElementById('game-container');
-        const startBtn = document.getElementById('start-btn');
-        const restartBtn = document.getElementById('restart-btn');
-        const startScreen = document.getElementById('start-screen');
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const winScreen = document.getElementById('win-screen');
-        const msg = document.getElementById('msg');
-        const rose = document.getElementById('goal-rose');
         const ground = document.querySelector('.ground');
-
+        const heartsDisplay = document.getElementById('hearts-count');
+        
         let isJumping = false;
         let gameActive = false;
-        let bugInterval;
+        let bugInterval, heartInterval;
         let winTimeout;
         let roseTween;
+        let heartCount = 0;
 
-        // Recalculate jump height on resize
         window.addEventListener('resize', () => {
-             JUMP_HEIGHT = Math.min(window.innerHeight * 0.5, 180);
+             JUMP_HEIGHT = Math.min(window.innerHeight * 0.5, 200);
         });
+
+        // --- PETAL ANIMATION (Atmosphere) ---
+        function createPetals() {
+            const petalCount = 15;
+            for(let i=0; i<petalCount; i++) {
+                let petal = document.createElement('div');
+                petal.classList.add('petal');
+                container.appendChild(petal);
+                animatePetal(petal);
+            }
+        }
+
+        function animatePetal(petal) {
+            gsap.set(petal, { 
+                x: Math.random() * window.innerWidth, 
+                y: -50, 
+                rotation: Math.random() * 360,
+                backgroundColor: Math.random() > 0.5 ? '#ff4d6d' : '#ff9a9e'
+            });
+            gsap.to(petal, {
+                y: window.innerHeight + 50,
+                x: `+=${Math.random() * 100 - 50}`,
+                rotation: `+=${Math.random() * 360}`,
+                duration: 3 + Math.random() * 4,
+                ease: "none",
+                onComplete: () => animatePetal(petal)
+            });
+        }
+        createPetals();
 
         // --- GAME ACTIONS ---
         function jump() {
@@ -240,18 +292,19 @@
 
         function spawnBug() {
             if (!gameActive) return;
-            
             const bug = document.createElement('div');
             bug.classList.add('bug');
             container.appendChild(bug);
 
+            // Varied speed for difficulty
+            let speed = 2.0 - (Math.random() * 0.5); 
+
             gsap.to(bug, { 
                 x: -window.innerWidth - 150, 
-                duration: 2.0 + Math.random(), 
+                duration: speed, 
                 ease: "none",
                 onUpdate: () => {
-                    // Check collision repeatedly during animation
-                    if (gameActive && checkCollision(player, bug)) {
+                    if (gameActive && checkCollision(player, bug, 0.3)) {
                         gameOver();
                     }
                 },
@@ -259,58 +312,96 @@
             });
         }
 
-        function checkCollision(p, b) {
-            const pRect = p.getBoundingClientRect();
-            const bRect = b.getBoundingClientRect();
+        function spawnHeart() {
+            if (!gameActive) return;
+            const heart = document.createElement('div');
+            heart.classList.add('heart-item');
+            container.appendChild(heart);
             
-            // Tighter hitbox buffer
-            const buffer = pRect.width * 0.3; 
-            return !(pRect.right < bRect.left + buffer || pRect.left > bRect.right - buffer || pRect.bottom < bRect.top + buffer || pRect.top > bRect.bottom - buffer);
+            // Random height (Jump to get it, or stay low)
+            let isHigh = Math.random() > 0.5;
+            let yPos = isHigh ? -(JUMP_HEIGHT * 0.7) : -20; 
+            heart.style.bottom = `calc(var(--ground-height) + ${isHigh ? 80 : 10}px)`;
+
+            gsap.fromTo(heart, 
+                { x: window.innerWidth },
+                { 
+                    x: -100, 
+                    duration: 2.5, 
+                    ease: "none",
+                    onUpdate: () => {
+                        if (gameActive && checkCollision(player, heart, 0)) {
+                            collectHeart(heart);
+                        }
+                    },
+                    onComplete: () => heart.remove() 
+                }
+            );
         }
 
-        // --- GAME OVER ---
+        function collectHeart(el) {
+            // Prevent double counting
+            if(el.dataset.collected) return;
+            el.dataset.collected = "true";
+            
+            // Visual feedback
+            gsap.to(el, { scale: 2, opacity: 0, duration: 0.2 });
+            heartCount++;
+            heartsDisplay.innerText = heartCount;
+            // sfxCollect.play(); // Enable if you have sound
+        }
+
+        function checkCollision(p, b, bufferPct) {
+            const pRect = p.getBoundingClientRect();
+            const bRect = b.getBoundingClientRect();
+            const buffer = pRect.width * bufferPct; 
+            
+            return !(pRect.right < bRect.left + buffer || 
+                     pRect.left > bRect.right - buffer || 
+                     pRect.bottom < bRect.top + buffer || 
+                     pRect.top > bRect.bottom - buffer);
+        }
+
+        // --- GAME STATES ---
         function gameOver() {
             gameActive = false;
             clearInterval(bugInterval);
+            clearInterval(heartInterval);
             clearTimeout(winTimeout);
             if(roseTween) roseTween.kill();
 
             gsap.killTweensOf(".bug"); 
+            gsap.killTweensOf(".heart-item");
             ground.style.animationPlayState = 'paused';
             bgm.stop();
             sfxHit.play();
 
-            msg.innerText = "CRASHED!";
-            gsap.to(player, { rotation: 90, duration: 0.2 });
+            // Shake effect
+            gsap.to(container, { x: 10, y: 10, duration: 0.1, yoyo: true, repeat: 5 });
 
-            setTimeout(() => { gameOverScreen.classList.remove('hidden'); }, 500);
+            gsap.to(player, { rotation: 90, duration: 0.2 });
+            document.getElementById('game-over-screen').classList.remove('hidden');
         }
 
-        // --- WIN SEQUENCE (Catch the Rose) ---
         function startRoseSequence() {
             if(!gameActive) return;
-            
             clearInterval(bugInterval);
-            msg.innerText = "GRAB THE ROSE!";
-
-            rose.style.display = 'block';
+            clearInterval(heartInterval);
             
-            // Rose moves from Right to Left
+            const rose = document.getElementById('goal-rose');
+            rose.style.display = 'block';
+            document.getElementById('msg').innerText = "GRAB THE ROSE!";
+            
             roseTween = gsap.fromTo(rose, 
                 { x: window.innerWidth }, 
                 { 
-                    x: -window.innerWidth, 
-                    duration: 3, 
-                    ease: "none",
+                    x: -window.innerWidth, duration: 3, ease: "none",
                     onUpdate: () => {
-                        if (gameActive && checkCollision(player, rose)) {
+                        if (gameActive && checkCollision(player, rose, 0.2)) {
                             triggerWin();
                         }
                     },
-                    onComplete: () => {
-                        // If missed, loop it again if game still active
-                        if(gameActive) startRoseSequence();
-                    }
+                    onComplete: () => { if(gameActive) startRoseSequence(); }
                 }
             );
         }
@@ -319,46 +410,49 @@
             gameActive = false;
             if(roseTween) roseTween.kill();
             ground.style.animationPlayState = 'paused';
-            
             bgm.stop();
             sfxWin.play();
-            confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-
-            msg.innerHTML = "HAPPY ROSE DAY!";
             
-            // Show new Win Screen
+            // Massive Confetti Explosion
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#ff4d6d', '#fff'] });
+            
             setTimeout(() => {
-                winScreen.classList.remove('hidden');
-            }, 500);
+                document.getElementById('win-screen').classList.remove('hidden');
+            }, 800);
         }
 
-        // --- START ---
         function startGame() {
-            startScreen.classList.add('hidden');
-            gameOverScreen.classList.add('hidden');
-            winScreen.classList.add('hidden');
-            msg.innerText = "RUN!";
+            document.querySelectorAll('.screen-overlay').forEach(el => el.classList.add('hidden'));
             
-            // Reset
+            // Reset Game
             document.querySelectorAll('.bug').forEach(b => b.remove());
-            rose.style.display = 'none';
+            document.querySelectorAll('.heart-item').forEach(h => h.remove());
+            document.getElementById('goal-rose').style.display = 'none';
             gsap.set(player, { rotation: 0, y: 0 });
+            gsap.set(container, { x: 0, y: 0 }); // Reset shake
+            
+            heartCount = 0;
+            heartsDisplay.innerText = "0";
             ground.style.animationPlayState = 'running';
+            document.getElementById('msg').innerText = "RUN FOR LOVE!";
 
             gameActive = true;
             isJumping = false;
             bgm.play();
 
-            spawnBug();
+            // Spawners
+            setTimeout(spawnBug, 500);
             bugInterval = setInterval(spawnBug, 1600);
+            heartInterval = setInterval(spawnHeart, 1200); // Hearts appear often
             winTimeout = setTimeout(startRoseSequence, GAME_DURATION);
         }
 
-        startBtn.addEventListener('click', startGame);
-        restartBtn.addEventListener('click', startGame);
-
+        // --- CONTROLS ---
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        
         window.addEventListener('touchstart', (e) => {
-            if(e.target !== startBtn && e.target !== restartBtn && !winScreen.contains(e.target)) jump();
+            if(!e.target.closest('button')) jump();
         });
         window.addEventListener('keydown', (e) => { if(e.code === 'Space') jump(); });
 
