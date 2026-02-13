@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Chocolate Day: Sweet Catch</title>
+    <title>Chocolate Day: Golden Catch</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@500;700&display=swap" rel="stylesheet">
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -18,12 +17,11 @@
             --item-size: 60px;
         }
 
-        /* Mobile sizing */
         @media (max-width: 600px) {
             :root {
-                --basket-width: 80px;
-                --basket-height: 65px;
-                --item-size: 45px;
+                --basket-width: 85px;
+                --basket-height: 70px;
+                --item-size: 50px;
             }
         }
 
@@ -32,67 +30,103 @@
             background: #ffeaa7; 
             font-family: 'Quicksand', sans-serif; 
             touch-action: none; user-select: none;
-            /* Prevent pull-to-refresh */
             overscroll-behavior: none;
         }
 
         #game-container { 
-            position: relative; 
-            width: 100vw; 
-            /* Fix for mobile browsers */
-            height: 100dvh; 
-            overflow: hidden; 
+            position: relative; width: 100vw; height: 100dvh; overflow: hidden; 
         }
 
         /* --- BACKGROUND --- */
         #bg-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(180deg, #81ecec 0%, #74b9ff 100%);
+            background: radial-gradient(circle at 50% 100%, #ff9ff3 0%, #feca57 100%);
             z-index: 1;
+        }
+        
+        .floating-heart {
+            position: absolute; color: rgba(255, 255, 255, 0.3);
+            font-size: 2rem; pointer-events: none; z-index: 2;
+            animation: floatUp linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { transform: translateY(-10vh) scale(1.2); opacity: 0; }
         }
 
         /* --- UI --- */
         #ui-layer {
-            position: absolute; top: 20px; left: 20px; z-index: 50;
-            background: rgba(255,255,255,0.9);
-            padding: 10px 20px; border-radius: 50px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            font-family: 'Fredoka One', cursive; color: #6c5ce7;
-            font-size: clamp(1rem, 5vw, 1.5rem); 
-            display: flex; gap: 10px; align-items: center;
+            position: absolute; top: 20px; left: 20px; right: 20px; z-index: 50;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .meter-container {
+            flex-grow: 1; height: 25px; background: rgba(255,255,255,0.5);
+            border-radius: 50px; margin: 0 15px; overflow: hidden;
+            border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        #heart-fill {
+            width: 0%; height: 100%; 
+            background: linear-gradient(90deg, #fd79a8, #d63031);
+            transition: width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         /* --- PLAYER --- */
         #player {
-            position: absolute; 
-            /* Ensure it sits above the iPhone home bar */
-            bottom: max(20px, env(safe-area-inset-bottom)); 
+            position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); 
             left: 50%; 
             width: var(--basket-width); height: var(--basket-height); 
             transform: translateX(-50%);
             background-image: url('assets/d3_basket.png');
             background-size: contain; background-repeat: no-repeat; background-position: bottom center;
             z-index: 20;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2));
+        }
+
+        /* MAGNET AURA */
+        .magnet-aura {
+            position: absolute; top: 50%; left: 50%;
+            width: 250px; height: 250px;
+            transform: translate(-50%, -50%) scale(0);
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.8);
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            pointer-events: none; opacity: 0; z-index: -1;
+            transition: opacity 0.3s;
         }
 
         /* --- ITEMS --- */
         .item {
-            position: absolute; top: -100px; 
+            position: absolute; top: -150px; 
             width: var(--item-size); height: var(--item-size);
             background-size: contain; background-repeat: no-repeat;
+            background-position: center;
             z-index: 10;
         }
         
+        /* IMAGE BASED ITEMS */
         .choco { background-image: url('assets/d3_choco.png'); }
-        .bomb  { background-image: url('assets/d3_bad.png'); } 
+        .angry { background-image: url('assets/d3_bad.png'); } 
         
-        /* The Giant Golden Chocolate */
-        .gold-boss { 
-            background-image: url('assets/d3_gold_choco.png'); 
-            width: calc(var(--item-size) * 2.5); 
-            height: calc(var(--item-size) * 2.5); 
-            filter: drop-shadow(0 0 20px gold);
-            z-index: 30;
+        /* THE GOLDEN BOSS */
+        .gold-boss {
+            width: 180px; height: 180px;
+            background-image: url('assets/d3_gold_choco.png');
+            background-size: contain; background-repeat: no-repeat;
+            filter: drop-shadow(0 0 30px #f1c40f);
+            z-index: 100;
+        }
+
+        /* --- TEXT --- */
+        .float-text {
+            position: absolute; font-family: 'Fredoka One'; 
+            font-size: 1.5rem; color: #fff;
+            text-shadow: 2px 2px 0 #d63031; pointer-events: none; z-index: 60;
+            white-space: nowrap;
         }
 
         /* --- SCREENS --- */
@@ -100,39 +134,43 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: flex; justify-content: center; align-items: center; flex-direction: column;
             z-index: 100; text-align: center;
-            background: rgba(0,0,0,0.85); color: white;
+            background: rgba(255, 234, 167, 0.95);
             padding: 20px; box-sizing: border-box;
+            transition: opacity 0.3s;
         }
-
-        #start-screen { background: rgba(255, 234, 167, 0.95); }
-        #game-over-screen { display: none; }
-        #win-screen { display: none; background: rgba(255, 215, 0, 0.95); color: #d35400; }
-
-        h1 { font-family:'Fredoka One'; font-size: clamp(2rem, 8vw, 3rem); margin-bottom: 10px; }
-        p { font-size: clamp(1rem, 4vw, 1.2rem); margin-bottom: 30px; line-height: 1.5; }
 
         .btn-start {
-            background: #0984e3; color: white; border: 4px solid white;
-            padding: 15px 40px; font-size: clamp(1rem, 5vw, 1.5rem); border-radius: 50px;
+            background: #d63031; color: white; border: none;
+            padding: 15px 40px; font-size: 1.5rem; border-radius: 50px;
             font-family: 'Fredoka One', cursive; cursor: pointer;
-            box-shadow: 0 8px 0 #0652dd; margin-top: 20px;
+            box-shadow: 0 8px 0 #b71540; margin-top: 20px;
             transition: transform 0.1s;
         }
-        .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #0652dd; }
+        .btn-start:active { transform: translateY(4px); box-shadow: 0 0 0 #b71540; }
 
-        /* Floating Score */
-        .float-score {
-            position: absolute; font-family: 'Fredoka One'; 
-            font-size: clamp(1.5rem, 5vw, 2rem);
-            pointer-events: none; z-index: 30; text-shadow: 2px 2px 0 #000;
+        /* --- SCRATCH CARD --- */
+        #scratch-container {
+            position: relative; width: 300px; height: 150px;
+            margin: 20px auto; background: white;
+            border-radius: 10px; overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            user-select: none;
         }
-        
-        /* Ticket Style for Reward */
-        .ticket {
-            background: white; color: #333; padding: 20px; border: 2px dashed #333;
-            transform: rotate(-2deg); margin-bottom: 20px;
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
-            max-width: 90%;
+        #scratch-reward {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; justify-content: center; align-items: center; flex-direction: column;
+            color: #d63031; font-family: 'Fredoka One';
+        }
+        canvas#scratch-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            cursor: pointer; touch-action: none;
+        }
+
+        /* Finger Trail */
+        .trail {
+            position: absolute; width: 15px; height: 15px;
+            background: rgba(255, 255, 255, 0.8); border-radius: 50%;
+            pointer-events: none; z-index: 90;
         }
     </style>
 </head>
@@ -142,244 +180,387 @@
         <div id="bg-layer"></div>
         
         <div id="ui-layer">
-            <span>🍫</span> <span id="score">0</span> / 50
+            <span style="font-size: 2rem;">🍫</span>
+            <div class="meter-container">
+                <div id="heart-fill"></div>
+            </div>
+            <span style="font-size: 2rem;">🎁</span>
         </div>
 
         <div id="start-screen" class="screen-overlay">
-            <h1 style="color:#0984e3;">Sweet Catch</h1>
-            <p style="color:#636e72;">
-                Collect 50 Points to Win!<br><br>
-                🍫 Choco = <span style="color:#00b894">+5 Points</span><br>
-                😡 Angry = <span style="color:#d63031">GAME OVER</span>
+            <h1 style="color:#d63031; font-size: 3rem; margin:0;">Sweet Catch</h1>
+            <p style="color:#636e72; font-weight:bold; line-height: 1.8;">
+                1. Catch <span style="font-size:1.5rem">🍫</span> to fill the Heart.<br>
+                2. Watch out for <span style="font-size:1.5rem">😡</span> and <span style="font-size:1.5rem">🍪</span><br>
+                3. Grab 🧲 and ❄️ powerups!<br>
             </p>
-            <button class="btn-start" id="start-btn">START</button>
+            <button class="btn-start" id="start-btn">START GAME</button>
         </div>
 
-        <div id="game-over-screen" class="screen-overlay">
-            <h1 style="color:#d63031;">OOPS!</h1>
-            <p>You caught an angry emoji!</p>
-            <button class="btn-start" style="background:#d63031; box-shadow:0 10px 0 #a21b24" id="restart-btn">TRY AGAIN</button>
-        </div>
-
-        <div id="win-screen" class="screen-overlay">
-            <h1>JACKPOT!</h1>
+        <div id="win-screen" class="screen-overlay" style="display:none; background: rgba(255, 107, 129, 0.95);">
+            <h1 style="color:#fff; text-shadow: 0 4px 0 rgba(0,0,0,0.1);">Sweet Victory!</h1>
+            <p style="color:#fff; font-size: 1.2rem;">Rub the card to see your gift:</p>
             
-            <div class="ticket">
-                <h2 style="margin:0; font-size:1.5rem;">OFFICIAL COUPON</h2>
-                <hr>
-                <p style="font-size: 1.2rem; font-weight:bold;">1x Chocolate Bar</p>
-                <p style="font-size: 0.8rem; color:#666;">Fully paid by Tanvir</p>
+            <div id="scratch-container">
+                <div id="scratch-reward">
+                    <span style="font-size:3rem;">🎁</span>
+                    <span>Unlimited Hugs &<br>A 5 Taka's Chocolate Bar!</span>
+                </div>
+                <canvas id="scratch-canvas"></canvas>
             </div>
 
-            <button class="btn-start" onclick="location.href='index.html'" style="background:#fff; color:#d35400; box-shadow:0 10px 0 #e67e22">CLAIM & EXIT</button>
+            <button class="btn-start" onclick="location.href='index.html'" style="background:#fff; color:#d63031; font-size:1rem; padding:10px 30px; margin-top:20px;">REDEEM GIFT</button>
         </div>
 
-        <div id="player"></div>
+        <div id="player">
+            <div class="magnet-aura"></div>
+        </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- AUDIO ---
-            let bgm, sfxCatch, sfxWin, sfxDie;
+        // --- GAME CONFIGURATION ---
+        const CONFIG = {
+            winScore: 250, 
+            spawnRate: 700,
+            // Types definition
+            types: [
+                { id: 'choco',  class: 'choco', val: 10, prob: 0.55 }, // Adjusted slightly
+                { id: 'angry',  class: 'angry', val: -20, prob: 0.15 }, // Standard Bad
+                { id: 'burnt',  emoji: '🍪',    val: -10, prob: 0.15 }, // INCREASED to match Angry
+                { id: 'magnet', emoji: '🧲',    val: 0,   prob: 0.08, effect: 'magnet' },
+                { id: 'ice',    emoji: '❄️',    val: 0,   prob: 0.07, effect: 'slow' }
+            ]
+        };
+
+        // --- STATE ---
+        let state = {
+            score: 0,
+            active: false,
+            bossPhase: false,
+            timeScale: 1,
+            magnetActive: false
+        };
+
+        let loops = { spawn: null };
+        const sounds = {};
+
+        // --- DOM ELEMENTS ---
+        const els = {
+            container: document.getElementById('game-container'),
+            player: document.getElementById('player'),
+            aura: document.querySelector('.magnet-aura'),
+            fill: document.getElementById('heart-fill'),
+            screens: {
+                start: document.getElementById('start-screen'),
+                win: document.getElementById('win-screen')
+            }
+        };
+
+        // --- AUDIO ---
+        function initAudio() {
             try {
-                bgm = new Howl({ src: ['assets/bgm_game.mp3'], loop: true, volume: 0.4 });
-                sfxCatch = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.6 });
-                sfxWin = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
-                sfxDie = new Howl({ src: ['assets/sfx_jump.mp3'], rate: 0.5, volume: 1.0 });
+                sounds.bgm = new Howl({ src: ['assets/bgm_game.mp3'], loop: true, volume: 0.3 });
+                sounds.catch = new Howl({ src: ['assets/sfx_collect.mp3'], volume: 0.5 });
+                sounds.win = new Howl({ src: ['assets/sfx_win.mp3'], volume: 1.0 });
+                sounds.bad = new Howl({ src: ['assets/sfx_jump.mp3'], rate: 0.5, volume: 0.8 });
             } catch(e) {}
+        }
 
-            // --- CONFIG ---
-            const GOAL_SCORE = 50; // Lowered slightly for mobile playability
-            let spawnRate = 800; 
-            let score = 0;
-            let gameActive = false;
-            let spawnInterval;
-            let bossPhase = false;
+        // --- INPUT & MOVEMENT ---
+        function initInput() {
+            const moveHandler = (e) => {
+                if (!state.active) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const p = (clientX / window.innerWidth) * 100;
+                gsap.set(els.player, { left: Math.max(10, Math.min(90, p)) + '%' });
+                createTrail(clientX, e.touches ? e.touches[0].clientY : e.clientY);
+            };
 
-            // --- DOM ---
-            const player = document.getElementById('player');
-            const container = document.getElementById('game-container');
-            const scoreEl = document.getElementById('score');
-            const startScreen = document.getElementById('start-screen');
-            const gameOverScreen = document.getElementById('game-over-screen');
-            const winScreen = document.getElementById('win-screen');
+            window.addEventListener('mousemove', moveHandler);
+            window.addEventListener('touchmove', moveHandler, { passive: false });
+        }
 
-            // --- CONTROLS ---
-            function movePlayer(e) {
-                if (!gameActive) return;
-                
-                // Get Touch or Mouse X
-                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                
-                // Calculate Percentage
-                let percent = (clientX / window.innerWidth) * 100;
-                
-                // Clamp keeps player inside screen (10% to 90%)
-                percent = Math.max(10, Math.min(90, percent));
-                
-                gsap.set(player, { left: percent + "%" });
+        function createTrail(x, y) {
+            if (Math.random() > 0.4) return;
+            const dot = document.createElement('div');
+            dot.className = 'trail';
+            dot.style.left = x + 'px';
+            dot.style.top = y + 'px';
+            els.container.appendChild(dot);
+            gsap.to(dot, { scale: 0, opacity: 0, duration: 0.5, onComplete: () => dot.remove() });
+        }
+
+        // --- GAME LOOP ---
+        function startGame() {
+            state.active = true;
+            state.bossPhase = false;
+            state.score = 0;
+            updateUI();
+            
+            // Remove old items
+            document.querySelectorAll('.item').forEach(i => i.remove());
+
+            els.screens.start.style.display = 'none';
+            if (sounds.bgm) sounds.bgm.play();
+            
+            startSpawner();
+        }
+
+        function startSpawner() {
+            clearInterval(loops.spawn);
+            if(state.bossPhase) return;
+            loops.spawn = setInterval(spawnItem, CONFIG.spawnRate / state.timeScale);
+        }
+
+        function spawnItem() {
+            if (!state.active || state.bossPhase) return;
+
+            const r = Math.random();
+            let sum = 0;
+            let type = CONFIG.types[0];
+            
+            for (let t of CONFIG.types) {
+                sum += t.prob;
+                if (r <= sum) { type = t; break; }
             }
 
-            // Attach listener to window so dragging doesn't stop if finger leaves basket
-            window.addEventListener('mousemove', movePlayer);
-            window.addEventListener('touchmove', movePlayer, { passive: false });
+            const item = document.createElement('div');
+            item.className = `item ${type.class || ''}`;
+            item.dataset.id = type.id;
+            
+            // Emoji fallback if no class image
+            if(type.emoji) {
+                item.innerText = type.emoji;
+                item.style.fontSize = "40px";
+                item.style.lineHeight = "60px";
+                item.style.textAlign = "center";
+            }
 
-            // --- SPAWNING LOGIC ---
-            function spawnItem() {
-                if (!gameActive || bossPhase) return;
+            item.style.left = (Math.random() * 80 + 10) + '%';
+            els.container.appendChild(item);
 
-                const item = document.createElement('div');
-                item.classList.add('item');
+            let duration = (Math.random() * 1.5 + 2) / state.timeScale; 
+
+            // GSAP TWEEN WITH UPDATER FOR COLLISION & MAGNET
+            gsap.to(item, {
+                y: window.innerHeight + 150,
+                duration: duration,
+                ease: 'none',
+                onUpdate: () => {
+                    // 1. Magnet Logic
+                    if (state.magnetActive && (type.id === 'choco')) {
+                        const iRect = item.getBoundingClientRect();
+                        const pRect = els.player.getBoundingClientRect();
+                        const dist = Math.hypot(iRect.x - pRect.x, iRect.y - pRect.y);
+                        
+                        // If within range, suck it in
+                        if (dist < 300) {
+                            // Move item X towards player X
+                            const xDiff = (pRect.x + pRect.width/2) - (iRect.x + iRect.width/2);
+                            gsap.to(item, { x: "+=" + (xDiff * 0.1), duration: 0.1, overwrite: "auto" });
+                        }
+                    }
+
+                    // 2. Collision Logic
+                    checkCollision(item, type);
+                },
+                onComplete: () => item.remove()
+            });
+        }
+
+        function checkCollision(item, type) {
+            if(!state.active) return;
+            const iRect = item.getBoundingClientRect();
+            const pRect = els.player.getBoundingClientRect();
+
+            // Simple Box Collision
+            if (iRect.bottom > pRect.top + 20 && iRect.top < pRect.bottom &&
+                iRect.right > pRect.left + 20 && iRect.left < pRect.right - 20) {
                 
-                // 30% Chance of Bomb
-                const isBomb = Math.random() > 0.7; 
-                item.classList.add(isBomb ? 'bomb' : 'choco');
-                item.dataset.type = isBomb ? 'bomb' : 'choco';
-
-                item.style.left = (Math.random() * 80 + 10) + "%"; // Keep away from extreme edges
-                container.appendChild(item);
-
-                // Speed
-                const speed = isBomb ? Math.random() * 1.5 + 2 : Math.random() * 2 + 3;
-
-                gsap.to(item, {
-                    top: window.innerHeight + 100, // Go below screen
-                    duration: speed,
-                    ease: "none",
-                    onUpdate: () => checkCollision(item),
-                    onComplete: () => item.remove()
-                });
-            }
-
-            // --- COLLISION ---
-            function checkCollision(item) {
-                if (!gameActive || item.dataset.caught) return;
-
-                const pRect = player.getBoundingClientRect();
-                const iRect = item.getBoundingClientRect();
-
-                // Simple AABB Collision
-                // Added a buffer so you have to actually hit the basket part
-                if (iRect.bottom > pRect.top + 15 && 
-                    iRect.top < pRect.bottom - 10 &&
-                    iRect.right > pRect.left + 15 && 
-                    iRect.left < pRect.right - 15) {
-                    
-                    catchItem(item);
-                }
-            }
-
-            function catchItem(item) {
-                item.dataset.caught = "true";
+                catchItem(item, type);
                 gsap.killTweensOf(item);
                 item.remove();
+            }
+        }
 
-                const type = item.dataset.type;
+        function catchItem(item, type) {
+            // Animation
+            gsap.fromTo(els.player, { scaleY: 0.7, scaleX: 1.2 }, { scaleY: 1, scaleX: 1, duration: 0.4, ease: "elastic.out(1, 0.3)" });
 
-                if (type === 'choco') {
-                    updateScore(5, item);
-                    if(sfxCatch) sfxCatch.play();
-                    gsap.fromTo(player, { scaleY: 0.8 }, { scaleY: 1, duration: 0.2 });
-                } 
-                else if (type === 'bomb') {
-                    gameOver();
-                }
-                else if (type === 'gold') {
-                    triggerWin();
+            // LOGIC
+            
+            // 1. Check for Gold Boss Catch
+            if (type.id === 'gold') {
+                triggerWin();
+                return;
+            }
+
+            // 2. Normal Items
+            if (type.val !== 0) {
+                state.score = Math.max(0, Math.min(CONFIG.winScore, state.score + type.val));
+                updateUI();
+                
+                showFloatText(type.val > 0 ? "+" + type.val : type.val, item);
+                
+                if(type.val > 0 && sounds.catch) sounds.catch.play();
+                if(type.val < 0) {
+                    if(sounds.bad) sounds.bad.play();
+                    gsap.fromTo(els.container, { x:-10 }, { x:10, duration:0.05, repeat:5, yoyo:true, clearProps:"x" });
                 }
             }
 
-            function updateScore(amount, itemRef) {
-                score += amount;
-                scoreEl.innerText = score;
-
-                // Floating Text
-                const floatText = document.createElement('div');
-                floatText.classList.add('float-score');
-                floatText.innerText = "+" + amount;
-                
-                // Position where item was caught
-                const rect = itemRef.getBoundingClientRect();
-                floatText.style.left = rect.left + "px";
-                floatText.style.top = rect.top + "px";
-                floatText.style.color = '#00b894';
-                
-                container.appendChild(floatText);
-                gsap.to(floatText, { y: -50, opacity: 0, duration: 1, onComplete: () => floatText.remove() });
-
-                // CHECK GOAL
-                if (score >= GOAL_SCORE && !bossPhase) {
-                    startBossPhase();
-                }
+            // 3. Effect Items
+            if (type.effect === 'slow') {
+                triggerSlowMo();
+            }
+            if (type.effect === 'magnet') {
+                triggerMagnet();
             }
 
-            // --- BOSS PHASE ---
-            function startBossPhase() {
-                bossPhase = true;
-                clearInterval(spawnInterval);
-                
-                // Clear existing items
-                document.querySelectorAll('.item').forEach(i => i.remove());
+            // 4. CHECK BOSS PHASE TRIGGER
+            if (state.score >= CONFIG.winScore && !state.bossPhase) {
+                startBossPhase();
+            }
+        }
 
-                // Spawn The Giant Gold Choco
+        // --- BOSS PHASE ---
+        function startBossPhase() {
+            state.bossPhase = true;
+            clearInterval(loops.spawn);
+            
+            // Clear current items
+            document.querySelectorAll('.item').forEach(i => {
+                gsap.to(i, { scale: 0, duration: 0.2, onComplete: () => i.remove() });
+            });
+
+            // Announce
+            showFloatText("FINAL CATCH!", els.player, 1.5);
+
+            // Spawn Golden Choco after delay
+            setTimeout(() => {
                 const gold = document.createElement('div');
-                gold.classList.add('item', 'gold-boss');
-                gold.dataset.type = 'gold';
-                gold.style.left = "50%"; 
-                // Start above screen
-                gold.style.top = "-150px";
-                container.appendChild(gold);
+                gold.className = 'item gold-boss';
+                gold.style.left = '50%';
+                gold.style.transform = 'translateX(-50%)'; // Center it
+                els.container.appendChild(gold);
 
-                // Falls all the way through
-                gsap.to(gold, {
-                    top: window.innerHeight + 150, 
-                    duration: 4,
-                    ease: "power1.inOut",
-                    onUpdate: () => checkCollision(gold)
-                });
-            }
+                gsap.fromTo(gold, 
+                    { y: -200 }, 
+                    { 
+                        y: window.innerHeight + 200, 
+                        duration: 5, // Slow fall
+                        ease: 'power1.inOut',
+                        onUpdate: () => checkCollision(gold, { id: 'gold', val: 0 })
+                    }
+                );
+            }, 1000);
+        }
 
-            // --- GAME OVER ---
-            function gameOver() {
-                gameActive = false;
-                clearInterval(spawnInterval);
-                if(bgm) bgm.stop();
-                if(sfxDie) sfxDie.play();
-                
-                // Shake Screen
-                gsap.fromTo(container, { x: -20 }, { x: 20, duration: 0.05, repeat: 5, yoyo: true, clearProps:"x" });
+        function updateUI() {
+            els.fill.style.width = (state.score / CONFIG.winScore * 100) + '%';
+        }
 
-                setTimeout(() => {
-                    gameOverScreen.style.display = 'flex';
-                }, 500);
-            }
+        function showFloatText(text, refItem, scale = 1) {
+            const el = document.createElement('div');
+            el.className = 'float-text';
+            el.innerText = text;
+            const rect = refItem.getBoundingClientRect();
+            el.style.left = rect.left + 'px';
+            el.style.top = rect.top + 'px';
+            el.style.fontSize = (1.5 * scale) + 'rem';
+            els.container.appendChild(el);
+            
+            gsap.to(el, { y: -100, opacity: 0, duration: 1.5, ease: "power2.out", onComplete: () => el.remove() });
+        }
 
-            function triggerWin() {
-                gameActive = false;
-                if(bgm) bgm.stop();
-                if(sfxWin) sfxWin.play();
-                confetti({ particleCount: 400, spread: 100 });
-                
-                winScreen.style.display = 'flex';
-            }
+        function triggerSlowMo() {
+            state.timeScale = 0.5;
+            gsap.to(els.container, { filter: "hue-rotate(180deg)", duration: 0.5 });
+            showFloatText("SLOW MO!", els.player, 1.5);
+            startSpawner(); // reset interval with new speed
+            
+            setTimeout(() => {
+                state.timeScale = 1;
+                gsap.to(els.container, { filter: "none", duration: 0.5 });
+                startSpawner();
+            }, 5000);
+        }
 
-            // --- START / RESTART ---
-            function startGame() {
-                startScreen.style.display = 'none';
-                gameOverScreen.style.display = 'none';
-                gameActive = true;
-                bossPhase = false;
-                score = 0;
-                scoreEl.innerText = "0";
-                
-                document.querySelectorAll('.item').forEach(i => i.remove());
-                
-                if(bgm) bgm.play();
-                spawnInterval = setInterval(spawnItem, spawnRate);
+        function triggerMagnet() {
+            state.magnetActive = true;
+            gsap.to(els.aura, { opacity: 1, scale: 1, duration: 0.5 });
+            showFloatText("MAGNET!", els.player, 1.5);
+            
+            setTimeout(() => {
+                state.magnetActive = false;
+                gsap.to(els.aura, { opacity: 0, scale: 0, duration: 0.5 });
+            }, 5000);
+        }
+
+        // --- WIN SYSTEM ---
+        function triggerWin() {
+            state.active = false;
+            if(sounds.bgm) sounds.bgm.stop();
+            if(sounds.win) sounds.win.play();
+            
+            confetti({ particleCount: 400, spread: 120, origin: { y: 0.6 } });
+            
+            els.screens.win.style.display = 'flex';
+            initScratchCard();
+        }
+
+        function initScratchCard() {
+            const canvas = document.getElementById('scratch-canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.parentElement.offsetWidth;
+            const h = canvas.parentElement.offsetHeight;
+            canvas.width = w; canvas.height = h;
+
+            // Cover
+            ctx.fillStyle = '#b2bec3';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#636e72';
+            ctx.font = '20px Quicksand';
+            ctx.fillText("Scratch Me!", w/2 - 55, h/2);
+
+            let isDrawing = false;
+            const scratch = (e) => {
+                if(!isDrawing) return;
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.beginPath();
+                ctx.arc(x, y, 25, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            canvas.addEventListener('mousedown', () => isDrawing = true);
+            canvas.addEventListener('touchstart', () => isDrawing = true);
+            window.addEventListener('mouseup', () => isDrawing = false);
+            window.addEventListener('touchend', () => isDrawing = false);
+            canvas.addEventListener('mousemove', scratch);
+            canvas.addEventListener('touchmove', scratch);
+        }
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initAudio();
+            initInput();
+            
+            // BG hearts
+            for(let i=0; i<8; i++) {
+                const h = document.createElement('div');
+                h.className = 'floating-heart';
+                h.innerText = Math.random()>0.5 ? '❤️' : '💖';
+                h.style.left = Math.random()*100 + '%';
+                h.style.animationDelay = Math.random()*5 + 's';
+                h.style.animationDuration = (Math.random()*5+5) + 's';
+                document.getElementById('bg-layer').appendChild(h);
             }
 
             document.getElementById('start-btn').addEventListener('click', startGame);
-            document.getElementById('restart-btn').addEventListener('click', startGame);
         });
     </script>
 </body>
